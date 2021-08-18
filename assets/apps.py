@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class CloudsConfig(AppConfig):
-    name = 'clouds'
+class AssetsConfig(AppConfig):
+    name = 'assets'
