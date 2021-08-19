@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div>
+    {% if current_folder.parent_id == None %}
+        <a href="{% url 'root_page' %}">..</a> <br>
+    {% else %}
+        <a href="{{ current_folder.parent_id.get_absolute_url }}">..</a> <br>
+    {% endif %}
+
+
+        {%for file in files%}
+            {{file.title}}<br>
+        {% endfor %}
+
+        {%for folder in folders%}
+            <a href="{{folder.get_absolute_url}}">{{folder.title}}</a><br>
+        {% endfor %}
+
+
+</div>
+{% endblock %}
