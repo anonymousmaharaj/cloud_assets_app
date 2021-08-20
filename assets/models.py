@@ -2,11 +2,10 @@ from django.db import models
 from django.urls import reverse
 
 
-# Create your models here.
 class File(models.Model):
     title = models.CharField(max_length=150)
     folder_id = models.ForeignKey('Folder',
-                                  on_delete=models.CASCADE,
+                                  on_delete=models.PROTECT,
                                   null=True,
                                   blank=True)
 
@@ -17,7 +16,7 @@ class File(models.Model):
 class Folder(models.Model):
     title = models.CharField(max_length=150)
     parent_id = models.ForeignKey('Folder',
-                                  on_delete=models.CASCADE,
+                                  on_delete=models.PROTECT,
                                   null=True,
                                   blank=True)
 

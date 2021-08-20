@@ -8,13 +8,13 @@
     {% endif %}
 
 
-        {%for file in files%}
-            {{file.title}}<br>
-        {% endfor %}
+    {%for file in files%}
+        {{file.title}}<br>
+    {% endfor %}
 
-        {%for folder in folders%}
-            <a href="{{folder.get_absolute_url}}">{{folder.title}}</a><br>
-        {% endfor %}
+    {%for folder in folders%}
+        <a href="{{folder.get_absolute_url}}">{{folder.title}}</a><br>
+    {% endfor %}
 
 
 </div>

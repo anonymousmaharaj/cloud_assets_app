@@ -3,8 +3,6 @@ from assets.models import File, Folder
 from django.contrib import admin
 
 
-# Register your models here.
-
 class FileAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'folder_id')
     fields = ('title', 'folder_id')

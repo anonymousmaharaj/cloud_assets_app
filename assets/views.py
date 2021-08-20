@@ -4,12 +4,12 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 
-# Create your views here.
 def health_check(request):
     return JsonResponse({'server_status': 200})
 
 
 def root_page(request):
+    # TODO: Re-implement with raw SQL
     files = File.objects.filter(folder_id=None)
     folders = Folder.objects.filter(parent_id=None)
     context = {'files': files, 'folders': folders}
