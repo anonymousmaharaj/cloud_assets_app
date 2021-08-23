@@ -4,4 +4,4 @@ A cloud-based application for managing your Assets
 
 
 ##Tech
-- Python 3.9
+- Python 3.8.11

@@ -4,10 +4,10 @@ from django.urls import reverse
 
 class File(models.Model):
     title = models.CharField(max_length=150)
-    folder_id = models.ForeignKey('Folder',
-                                  on_delete=models.PROTECT,
-                                  null=True,
-                                  blank=True)
+    folder = models.ForeignKey('Folder',
+                               on_delete=models.PROTECT,
+                               null=True,
+                               blank=True)
 
     def __str__(self):
         return self.title
@@ -15,10 +15,10 @@ class File(models.Model):
 
 class Folder(models.Model):
     title = models.CharField(max_length=150)
-    parent_id = models.ForeignKey('Folder',
-                                  on_delete=models.PROTECT,
-                                  null=True,
-                                  blank=True)
+    parent = models.ForeignKey('Folder',
+                               on_delete=models.PROTECT,
+                               null=True,
+                               blank=True)
 
     def __str__(self):
         return self.title
