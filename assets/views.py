@@ -1,9 +1,11 @@
 from assets.db.queries import get_assets_list
+
 from common.validators import validate_int
-from .models import Folder
 
 from django.http import JsonResponse
 from django.shortcuts import render
+
+from .models import Folder
 
 
 def health_check(request):

@@ -2,7 +2,6 @@
 {% block content %}
 
 <div>
-<!--    add to check get params for parent folder-->
     {% if request.GET.folder %}
         {% if folder_obj.parent_id_id is None %}
             <a href="{% url 'root_page' %}">..</a><br>
@@ -18,14 +17,5 @@
             {{row.title}} <br>
         {% endif %}
     {% endfor %}
-
-<!--    {%for file in files%}-->
-<!--        {{file.title}} <br>-->
-<!--    {% endfor %}-->
-
-<!--    {%for folder in folders%}-->
-<!--        <a href="{{folder.get_absolute_url}}">{{folder.title}}</a> <br>-->
-<!--    {% endfor %}-->
-
 </div>
 {% endblock %}

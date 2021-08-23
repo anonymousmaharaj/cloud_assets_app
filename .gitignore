@@ -6,6 +6,7 @@ __pycache__/
 # Custom
 .idea/
 static/
+tox.ini
 
 
 # C extensions
