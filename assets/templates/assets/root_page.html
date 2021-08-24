@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div>
+    {% for row in rows %}
+        {{row.title}} <br>
+    {% endfor %}
+</div>
+{% endblock %}

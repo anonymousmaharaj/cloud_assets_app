@@ -4,8 +4,9 @@ __pycache__/
 *$py.class
 
 # Custom
-.idea
-
+.idea/
+static/
+.python-version
 
 # C extensions
 *.so
