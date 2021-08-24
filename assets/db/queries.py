@@ -5,13 +5,13 @@ def get_assets_list(folder_id):
     query = """
         SELECT id, title, folder_id AS parent_id, False AS is_folder
           FROM assets_file
-         WHERE folder_id = :folder_id
-            OR (:folder_id IS NULL and folder_id IS NULL)
+         WHERE folder_id = %(folder_id)s
+            OR (%(folder_id)s IS NULL and folder_id IS NULL)
          UNION
         SELECT id, title, parent_id AS parent_id, True AS is_folder
           FROM assets_folder
-         WHERE parent_id = :folder_id
-            OR (:folder_id IS NULL and parent_id IS NULL)"""
+         WHERE parent_id = %(folder_id)s
+            OR (%(folder_id)s IS NULL and parent_id IS NULL)"""
 
     with connection.cursor() as cursor:
         cursor.execute(query, {'folder_id': folder_id})
