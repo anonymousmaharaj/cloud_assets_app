@@ -2,8 +2,20 @@
 {% block content %}
 
 <div>
+    {% if request.GET.folder %}
+        {% if folder_obj.parent_id is None %}
+            <a href="{% url 'root_page' %}">..</a><br>
+        {% else %}
+            <a href="?folder={{folder_obj.parent_id}}">..</a><br>
+        {% endif %}
+    {% endif %}
+
     {% for row in rows %}
-        {{row.title}} <br>
+        {% if row.is_folder %}
+            <a href="/?folder={{row.id}}">{{row.title}}</a> <br>
+        {% else %}
+            {{row.title}} <br>
+        {% endif %}
     {% endfor %}
 </div>
 {% endblock %}
