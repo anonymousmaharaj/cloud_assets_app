@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
-{% block content %}
 
+{% block auth %}
+    {% if request.user.is_authenticated %}
+        <div>
+            Welcome, {{user.username}} | <a href="{% url 'logout' %}">Logout</a><br><br>
+        </div>
+    {% else %}
+        <div>
+            <a href="{% url 'login' %}">Sing In</a> | Sing Up<br><br>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
 <div>
     {% for row in rows %}
         {{row.title}} <br>
