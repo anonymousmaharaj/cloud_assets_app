@@ -15,6 +15,7 @@ def health_check(request):
 
 
 def show_page(request):
+    """Render page for display assets."""
     folder_obj = None
     folder_id = request.GET.get('folder')
 
