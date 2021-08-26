@@ -8,6 +8,13 @@
     <title>{% block title %} Cloud Assets {% endblock %}</title>
 </head>
 <body>
+{% block messages %}
+    {% if messages %}
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    {% endif %}
+{% endblock %}
 {% block auth %} {% endblock %}
 {% block content %} {% endblock %}
 </body>
