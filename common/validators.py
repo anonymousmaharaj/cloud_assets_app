@@ -3,6 +3,7 @@
 from django.http import HttpResponseBadRequest
 
 
+# TODO: Fix both response
 def validate_folder_id(folder_id):
     """Validate value of 'folder' param."""
     if folder_id is not None:

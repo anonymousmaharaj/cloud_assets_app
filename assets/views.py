@@ -34,6 +34,7 @@ def show_page(request):
             template_name='assets/400_error_page.html'
         ))
 
+    # TODO: Fix this check
     if folder_id is not None:
         folder_obj = get_object_or_404(Folder, pk=folder_id)
 
