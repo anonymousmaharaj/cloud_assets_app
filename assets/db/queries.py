@@ -1,7 +1,10 @@
+"""Queries and related objects."""
+
 from django.db import connection
 
 
 def get_assets_list(folder_id):
+    """Raw SQL query for receiving assets of folder or a root page."""
     query = """
         SELECT id, title, folder_id AS parent_id, False AS is_folder
           FROM assets_file
@@ -21,7 +24,7 @@ def get_assets_list(folder_id):
 
 
 def dictfetchall(cursor):
-    """Return all rows from a cursor as a dict"""
+    """Return all rows from a cursor as a dict."""
     columns = [col[0] for col in cursor.description]
     return [
         dict(zip(columns, row))

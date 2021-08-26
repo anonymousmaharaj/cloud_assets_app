@@ -1,3 +1,5 @@
+"""Views for Assets application."""
+
 from assets.db.queries import get_assets_list
 from assets.models import Folder
 
@@ -8,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 
 
 def health_check(request):
+    """Response 200 status code."""
     return JsonResponse({'server_status': 200})
 
 
