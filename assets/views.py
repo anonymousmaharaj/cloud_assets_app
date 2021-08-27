@@ -21,6 +21,8 @@ def show_page(request):
 
 
 def user_register(request):
+    """Register new user."""
+    # TODO: Protect cases with other type's of methods.
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
