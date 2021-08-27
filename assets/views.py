@@ -1,12 +1,14 @@
 """Views for Assets application."""
 
 from assets.db.queries import get_assets_list
+from assets.forms import UserRegisterForm
 from assets.models import Folder
 
 from common.validators import validate_folder_id, validate_get_params
 
+from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 
 def health_check(request):
@@ -41,3 +43,20 @@ def show_page(request):
     rows = get_assets_list(folder_id)
     context = {'rows': rows, 'folder_obj': folder_obj}
     return render(request, 'assets/root_page.html', context)
+
+
+def user_register(request):
+    """Register new user."""
+    # TODO: Protect cases with other type's of methods.
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Success!')
+            return redirect('root_page')
+        else:
+            messages.error(request, 'Error!')
+    else:
+        form = UserRegisterForm()
+    context = {'form': form}
+    return render(request, 'assets/register.html', context=context)
