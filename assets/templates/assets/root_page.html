@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
+{% if user.is_authenticated %}
+    <a href="{% url 'upload_file' %}">Upload File</a>
 
+{% endif %}
 <div>
     {% for row in rows %}
         {{row.title}} <br>
