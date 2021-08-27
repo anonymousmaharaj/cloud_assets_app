@@ -14,7 +14,8 @@ def get_assets_list(folder_id):
         SELECT id, title, parent_id AS parent_id, True AS is_folder
           FROM assets_folder
          WHERE parent_id = %(folder_id)s
-            OR (%(folder_id)s IS NULL and parent_id IS NULL)"""
+            OR (%(folder_id)s IS NULL and parent_id IS NULL)
+      ORDER BY is_folder DESC"""
 
     with connection.cursor() as cursor:
         cursor.execute(query, {'folder_id': folder_id})
