@@ -20,6 +20,11 @@ class File(models.Model):
         """Return title when called."""
         return self.title
 
+    @staticmethod
+    def create_file(title, folder=None):
+        """Create new object in table."""
+        File.objects.create(title=title, folder=folder)
+
 
 class Folder(models.Model):
     """Type of user assets.

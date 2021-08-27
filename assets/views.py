@@ -1,7 +1,9 @@
 """Views for Assets application."""
+import os
 
 from assets.db.queries import get_assets_list
 from assets.forms import UploadFileForm
+from assets.models import File
 from assets.utils.s3 import upload_file
 from assets.utils.validators import validate_upload_file
 
@@ -22,7 +24,11 @@ def show_page(request):
 
 
 def user_upload_file(request):
-    """Render form. Get file's path and upload it on S3."""
+    """Upload file to S3.
+
+    Render form. Get file's path and upload it on S3.
+    Create new object in File table.
+    """
     if request.method == 'POST':
         form = UploadFileForm(request.POST)
         if form.is_valid():
@@ -31,6 +37,7 @@ def user_upload_file(request):
             if validate_status is False:
                 return HttpResponse(f'No such file in directory {upload_path}')
             if upload_file(upload_path, 'django-cloud-assets'):
+                File.create_file(os.path.basename(upload_path))
                 return HttpResponse('Your file will be downloaded')
             else:
                 return HttpResponse('Error')
