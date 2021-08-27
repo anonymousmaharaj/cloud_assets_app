@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
+
 {% block auth %}
     {% if request.user.is_authenticated %}
         <div>
-            Welcome, {{ user.username }} | <a href="">Logout</a><br><br>
+            Welcome, {{user.username}} | <a href="{% url 'logout' %}">Logout</a><br><br>
         </div>
     {% else %}
         <div>
-            <a href="">Sign In</a> | <a href="{% url 'register' %}">Sign Up</a><br><br>
+            <a href="{% url 'login' %}">Sing In</a> | <a href="{% url 'register' %}">Sign Up</a><br><br>
         </div>
     {% endif %}
 {% endblock %}
 {% block content %}
-
     <div>
         {#TODO: Fix check on 'if folder_obj'#}
         {% if request.GET.folder %}
