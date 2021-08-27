@@ -7,15 +7,27 @@
         </div>
     {% else %}
         <div>
-            <a href="{% url 'login' %}">Sing In</a> | Sing Up<br><br>
+            <a href="{% url 'login' %}">Sing In</a> | <a href="{% url 'register' %}">Sign Up</a><br><br>
         </div>
     {% endif %}
 {% endblock %}
-
 {% block content %}
-<div>
-    {% for row in rows %}
-        {{row.title}} <br>
-    {% endfor %}
-</div>
+    <div>
+        {#TODO: Fix check on 'if folder_obj'#}
+        {% if request.GET.folder %}
+            {% if folder_obj.parent_id is None %}
+                <a href="{% url 'root_page' %}">..</a><br>
+            {% else %}
+                <a href="?folder={{ folder_obj.parent_id }}">..</a><br>
+            {% endif %}
+        {% endif %}
+
+        {% for row in rows %}
+            {% if row.is_folder %}
+                <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
+            {% else %}
+                {{ row.title }} <br>
+            {% endif %}
+        {% endfor %}
+    </div>
 {% endblock %}
