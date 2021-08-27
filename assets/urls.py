@@ -1,6 +1,6 @@
 """Endpoints for Assets application."""
 
-from assets.views import health_check, show_page
+from assets.views import health_check, show_page, user_register
 
 from django.urls import path
 
