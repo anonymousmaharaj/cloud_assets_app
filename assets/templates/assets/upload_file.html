@@ -3,8 +3,9 @@
 {% block content %}
     <form method="post">
         {% csrf_token %}
-        <input name="path" type="text">
+        <input name="path" type="text" required placeholder="Input file's path">
         <button type="submit">Upload!</button>
     </form>
+    <a href="{% url 'root_page' %}">Back</a>
 {% endblock %}
 

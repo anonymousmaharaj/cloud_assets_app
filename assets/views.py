@@ -7,7 +7,7 @@ from assets.models import File
 from assets.utils.s3 import upload_file
 from assets.utils.validators import validate_upload_file
 
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import render
 
 
@@ -37,10 +37,12 @@ def user_upload_file(request):
             if validate_status is False:
                 return HttpResponse(f'No such file in directory {upload_path}')
             if upload_file(upload_path, 'django-cloud-assets'):
-                File.create_file(os.path.basename(upload_path))
+                File.create_file(title=os.path.basename(upload_path), owner=request.user)
                 return HttpResponse('Your file will be downloaded')
             else:
                 return HttpResponse('Error')
-    else:
+    elif request.method == 'GET':
         form = UploadFileForm()
-    return render(request, 'assets/upload_file.html', {'form': form})
+        return render(request, 'assets/upload_file.html', {'form': form})
+    else:
+        return HttpResponseNotAllowed()
