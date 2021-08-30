@@ -23,7 +23,6 @@ def health_check(request):
 
 def show_page(request):
     """Render page for display assets."""
-    folder_obj = None
     folder_id = request.GET.get('folder')
 
     validate_id_status = validate_folder_id(folder_id)

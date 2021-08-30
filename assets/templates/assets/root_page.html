@@ -14,21 +14,22 @@
 {% block content %}
     <a href="{% url 'upload_file' %}">Upload File</a>
     <hr>
-    <div>
-        {% if folder_obj %}
-            {% if folder_obj.parent_id is None %}
-                <a href="{% url 'root_page' %}">..</a><br>
-            {% else %}
-                <a href="?folder={{ folder_obj.parent_id }}">..</a><br>
+    {% if request.user.is_authenticated %}
+        <div>
+            {% if folder_obj %}
+                {% if folder_obj.parent_id is None %}
+                    <a href="{% url 'root_page' %}">..</a><br>
+                {% else %}
+                    <a href="?folder={{ folder_obj.parent_id }}">..</a><br>
+                {% endif %}
             {% endif %}
-        {% endif %}
-
-        {% for row in rows %}
-            {% if row.is_folder %}
-                <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
-            {% else %}
-                {{ row.title }} <br>
-            {% endif %}
-        {% endfor %}
-    </div>
+            {% for row in rows %}
+                {% if row.is_folder %}
+                    <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
+                {% else %}
+                    {{ row.title }} <br>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
