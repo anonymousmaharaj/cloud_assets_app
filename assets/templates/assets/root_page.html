@@ -3,7 +3,7 @@
 {% block auth %}
     {% if request.user.is_authenticated %}
         <div>
-            Welcome, {{user.username}} | <a href="{% url 'logout' %}">Logout</a><br><br>
+            Welcome, {{ user.username }} | <a href="{% url 'logout' %}">Logout</a><br><br>
         </div>
     {% else %}
         <div>
@@ -12,12 +12,10 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-
     <a href="{% url 'upload_file' %}">Upload File</a>
     <hr>
     <div>
-        {#TODO: Fix check on 'if folder_obj'#}
-        {% if request.GET.folder %}
+        {% if folder_obj %}
             {% if folder_obj.parent_id is None %}
                 <a href="{% url 'root_page' %}">..</a><br>
             {% else %}

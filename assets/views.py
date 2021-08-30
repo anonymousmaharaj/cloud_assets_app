@@ -41,9 +41,7 @@ def show_page(request):
             template_name='assets/400_error_page.html'
         ))
 
-    # TODO: Fix this check
-    if folder_id is not None:
-        folder_obj = get_object_or_404(Folder, pk=folder_id)
+    folder_obj = get_object_or_404(Folder, pk=folder_id) if folder_id else None
 
     rows = get_assets_list(folder_id)
     context = {'rows': rows, 'folder_obj': folder_obj}
@@ -100,7 +98,6 @@ def user_logout(request):
 
 def user_register(request):
     """View for register."""
-    # TODO: Protect cases with other type's of methods.
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():

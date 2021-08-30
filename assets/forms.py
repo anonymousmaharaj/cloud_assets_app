@@ -15,7 +15,7 @@ class UserLoginForm(AuthenticationForm):
     """Basic class for login."""
 
     username = forms.CharField(label='Username')
-    password = forms.CharField(label='Password')
+    password = forms.PasswordInput()
 
 
 class UserRegisterForm(UserCreationForm):
