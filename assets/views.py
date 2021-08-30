@@ -1,19 +1,18 @@
 """Views for Assets application."""
 import os
 
-from assets.db.queries import get_assets_list
-from assets.forms import UploadFileForm, UserLoginForm, UserRegisterForm
-from assets.models import File, Folder
-from assets.utils.s3 import upload_file
-from assets.utils.validators import validate_upload_file
-
-from common.validators import validate_folder_id, validate_get_params
-
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+
+from assets.db.queries import get_assets_list
+from assets.forms import UploadFileForm, UserLoginForm, UserRegisterForm
+from assets.models import File, Folder
+from assets.utils.s3 import upload_file
+from assets.validators import (validate_exist_file, validate_folder_id,
+                               validate_get_params, validate_upload_file)
 
 
 def health_check(request):
@@ -24,7 +23,6 @@ def health_check(request):
 @login_required(login_url='/login/')
 def show_page(request):
     """Render page for display assets."""
-    folder_obj = None
     folder_id = request.GET.get('folder')
 
     validate_id_status = validate_folder_id(folder_id)
@@ -61,20 +59,25 @@ def user_upload_file(request):
         if form.is_valid():
             upload_path = request.POST.get('path')
             validate_status = validate_upload_file(upload_path)
-            if validate_status is False:
+            file_exist = validate_exist_file(upload_path,
+                                             user=request.user,
+                                             folder=None)
+            if file_exist:
+                return HttpResponse('File already exist in folder.')
+            if not validate_status:
                 return HttpResponse(f'No such file in directory {upload_path}')
             if upload_file(upload_path, 'django-cloud-assets'):
                 File.create_file(
                     title=os.path.basename(upload_path),
                     owner=request.user)
-                return HttpResponse('Your file will be downloaded')
+                return HttpResponse('Your file will be uploaded.')
             else:
                 return HttpResponse('Error')
     elif request.method == 'GET':
         form = UploadFileForm()
         return render(request, 'assets/upload_file.html', {'form': form})
     else:
-        return HttpResponseNotAllowed()
+        return HttpResponseNotAllowed(['GET', 'POST'])
 
 
 def user_login(request):

@@ -1,11 +1,12 @@
 """Endpoints for Assets application."""
 
+from django.urls import path
+
 from assets.views import (health_check, show_page,
                           user_login, user_logout,
                           user_register, user_upload_file)
 
-from django.urls import path
-
+# TODO: Fix upload_file path.
 urlpatterns = [
     path('api/health_check/', health_check),
     path('', show_page, name='root_page'),
