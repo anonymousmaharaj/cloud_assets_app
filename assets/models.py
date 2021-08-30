@@ -15,7 +15,8 @@ class File(models.Model):
                                on_delete=models.PROTECT,
                                null=True,
                                blank=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,
+                              on_delete=models.PROTECT)
 
     def __str__(self):
         """Return title when called."""
@@ -38,7 +39,8 @@ class Folder(models.Model):
                                on_delete=models.PROTECT,
                                null=True,
                                blank=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL,
+                              on_delete=models.PROTECT)
 
     def __str__(self):
         """Return title when called."""

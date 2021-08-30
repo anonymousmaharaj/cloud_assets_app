@@ -17,6 +17,7 @@ class UserLoginForm(AuthenticationForm):
     username = forms.CharField(label='Username')
     password = forms.CharField(label='Password')
 
+
 class UserRegisterForm(UserCreationForm):
     """Custom form for registration."""
 

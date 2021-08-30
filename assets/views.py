@@ -7,12 +7,13 @@ from assets.models import File, Folder
 from assets.utils.s3 import upload_file
 from assets.utils.validators import validate_upload_file
 
+from common.validators import validate_folder_id, validate_get_params
+
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-
-from common.validators import validate_folder_id, validate_get_params
 
 
 def health_check(request):
@@ -49,6 +50,7 @@ def show_page(request):
     return render(request, 'assets/root_page.html', context)
 
 
+@login_required(login_url='/login/')
 def user_upload_file(request):
     """Upload file to S3.
 
@@ -63,7 +65,9 @@ def user_upload_file(request):
             if validate_status is False:
                 return HttpResponse(f'No such file in directory {upload_path}')
             if upload_file(upload_path, 'django-cloud-assets'):
-                File.create_file(title=os.path.basename(upload_path), owner=request.user)
+                File.create_file(
+                    title=os.path.basename(upload_path),
+                    owner=request.user)
                 return HttpResponse('Your file will be downloaded')
             else:
                 return HttpResponse('Error')
@@ -75,6 +79,7 @@ def user_upload_file(request):
 
 
 def user_login(request):
+    """View for user login."""
     if request.method == 'POST':
         form = UserLoginForm(data=request.POST)
         if form.is_valid():
@@ -88,12 +93,13 @@ def user_login(request):
 
 
 def user_logout(request):
+    """View for user logout."""
     logout(request)
     return redirect('login')
 
 
 def user_register(request):
-    """Register new user."""
+    """View for register."""
     # TODO: Protect cases with other type's of methods.
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)

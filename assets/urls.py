@@ -1,9 +1,10 @@
 """Endpoints for Assets application."""
 
-from assets.views import health_check, show_page, user_login, user_logout, user_register, user_upload_file
+from assets.views import (health_check, show_page,
+                          user_login, user_logout,
+                          user_register, user_upload_file)
 
 from django.urls import path
-
 
 urlpatterns = [
     path('api/health_check/', health_check),
