@@ -14,7 +14,6 @@
 {% block content %}
     <a href="{% url 'upload_file' %}">Upload File</a>
     <hr>
-    {% if request.user.is_authenticated %}
         <div>
             {% if folder_obj %}
                 {% if folder_obj.parent_id is None %}
@@ -31,5 +30,4 @@
                 {% endif %}
             {% endfor %}
         </div>
-    {% endif %}
 {% endblock %}

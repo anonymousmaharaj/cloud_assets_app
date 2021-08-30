@@ -21,6 +21,7 @@ def health_check(request):
     return JsonResponse({'server_status': 200})
 
 
+@login_required(login_url='/login/')
 def show_page(request):
     """Render page for display assets."""
     folder_id = request.GET.get('folder')
