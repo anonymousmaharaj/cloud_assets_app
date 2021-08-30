@@ -4,7 +4,7 @@ import os.path
 
 from django.http import HttpResponseBadRequest
 
-from assets.models import File
+from assets import models
 
 
 def validate_upload_file(file_path):
@@ -14,9 +14,9 @@ def validate_upload_file(file_path):
 
 def validate_exist_file(file_path, user, folder=None):
     """Validate exists file in DB."""
-    file_exist = File.objects.filter(title=os.path.basename(file_path),
-                                     owner=user,
-                                     folder=folder)
+    file_exist = models.File.objects.filter(title=os.path.basename(file_path),
+                                            owner=user,
+                                            folder=folder)
     return True if len(file_exist) > 0 else False
 
 
