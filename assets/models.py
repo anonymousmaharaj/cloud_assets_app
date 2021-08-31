@@ -2,7 +2,7 @@
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, UniqueConstraint
+from django.db.models import Q
 from django.urls import reverse
 
 
@@ -24,14 +24,14 @@ class File(models.Model):
         """Metadata for File model."""
 
         constraints = [
-            UniqueConstraint(
-                name='file_title_folder_owner_key',
+            models.UniqueConstraint(
+                name='assets_file_title_folder_owner_key',
                 fields=['title', 'folder', 'owner'],
             ),
-            UniqueConstraint(
-                name='file_title_owner_key',
+            models.UniqueConstraint(
+                name='assets_file_title_owner_key',
                 fields=['title', 'owner'],
-                condition=Q(folder=None),
+                condition=~Q(folder=None),
             ),
         ]
 
@@ -63,12 +63,12 @@ class Folder(models.Model):
         """Metadata for Folder model."""
 
         constraints = [
-            UniqueConstraint(
-                name='folder_title_parent_owner_key',
+            models.UniqueConstraint(
+                name='assets_folder_title_parent_owner_key',
                 fields=['title', 'parent', 'owner']),
 
-            UniqueConstraint(
-                name='folder_title_owner_key',
+            models.UniqueConstraint(
+                name='assets_folder_title_owner_key',
                 fields=['title', 'owner'],
                 condition=Q(folder=None)
             )

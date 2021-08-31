@@ -11,7 +11,6 @@ from assets import forms
 from assets import models
 from assets import validators
 from assets.db import queries
-from assets.utils import s3
 
 
 def health_check(request):
@@ -40,7 +39,7 @@ def show_page(request):
         ))
 
     folder_obj = get_object_or_404(models.Folder,
-                                   pk=folder_id)if folder_id else None
+                                   pk=folder_id) if folder_id else None
 
     rows = queries.get_assets_list(folder_id)
     context = {'rows': rows, 'folder_obj': folder_obj}
@@ -67,13 +66,10 @@ def user_upload_file(request):
             if not validate_status:
                 return http.HttpResponse(
                     f'No such file in directory {upload_path}')
-            if s3.upload_file(upload_path, 'django-cloud-assets'):
-                models.File.create_file(
-                    title=os.path.basename(upload_path),
-                    owner=request.user)
-                return http.HttpResponse('Your file will be uploaded.')
-            else:
-                return http.HttpResponse('Error')
+            models.File.create_file(
+                title=os.path.basename(upload_path),
+                owner=request.user)
+            return http.HttpResponse('Your file will be uploaded.')
     elif request.method == 'GET':
         form = forms.UploadFileForm()
         return render(request, 'assets/upload_file.html', {'form': form})
