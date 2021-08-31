@@ -1,2 +1,7 @@
 [flake8]
 exclude = assets/migrations, static, venv, manage.py, settings.py
+application-import-names =
+    assets,
+    cloud_assets,
+    common
+import-order-style = google
