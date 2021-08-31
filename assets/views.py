@@ -66,9 +66,9 @@ def user_upload_file(request):
             if not validate_status:
                 return http.HttpResponse(
                     f'No such file in directory {upload_path}')
-            models.File.create_file(
-                title=os.path.basename(upload_path),
-                owner=request.user)
+            models.File(title=os.path.basename(upload_path),
+                        owner=request.user,
+                        folder=None).save()
             return http.HttpResponse('Your file will be uploaded.')
     elif request.method == 'GET':
         form = forms.UploadFileForm()

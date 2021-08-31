@@ -31,18 +31,13 @@ class File(models.Model):
             models.UniqueConstraint(
                 name='assets_file_title_owner_key',
                 fields=['title', 'owner'],
-                condition=~Q(folder=None),
+                condition=Q(folder=None),
             ),
         ]
 
     def __str__(self):
         """Return title when called."""
         return self.title
-
-    @staticmethod
-    def create_file(title, owner, folder=None):
-        """Create new object in table."""
-        File.objects.create(title=title, folder=folder, owner=owner)
 
 
 class Folder(models.Model):
@@ -65,12 +60,13 @@ class Folder(models.Model):
         constraints = [
             models.UniqueConstraint(
                 name='assets_folder_title_parent_owner_key',
-                fields=['title', 'parent', 'owner']),
+                fields=['title', 'parent', 'owner'],
+            ),
 
             models.UniqueConstraint(
                 name='assets_folder_title_owner_key',
                 fields=['title', 'owner'],
-                condition=Q(folder=None)
+                condition=Q(parent=None)
             )
         ]
 
