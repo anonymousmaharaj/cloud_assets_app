@@ -17,10 +17,10 @@ def validate_exist_file(file_path, user, folder=None):
     file_exist = models.File.objects.filter(title=os.path.basename(file_path),
                                             owner=user,
                                             folder=folder)
-    return True if len(file_exist) > 0 else False
+    return len(file_exist) > 0
 
 
-# TODO: Fix both responses above
+# TODO: Fix both responses below
 def validate_folder_id(folder_id):
     """Validate value of 'folder' param."""
     if folder_id is not None:

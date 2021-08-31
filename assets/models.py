@@ -12,16 +12,6 @@ class File(models.Model):
     Related with Folder.
     """
 
-    class Meta:
-        """Additional constraints."""
-
-        constraints = [UniqueConstraint(fields=['title', 'folder', 'owner'],
-                                        name='file_unique_fields'),
-                       UniqueConstraint(fields=['title', 'owner'],
-                                        condition=Q(folder=None),
-                                        name='file_condition_fields')
-                       ]
-
     title = models.CharField(max_length=150)
     folder = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
@@ -29,6 +19,21 @@ class File(models.Model):
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT)
+
+    class Meta:
+        """Metadata for File model."""
+
+        constraints = [
+            UniqueConstraint(
+                name='file_title_folder_owner_key',
+                fields=['title', 'folder', 'owner'],
+            ),
+            UniqueConstraint(
+                name='file_title_owner_key',
+                fields=['title', 'owner'],
+                condition=Q(folder=None),
+            ),
+        ]
 
     def __str__(self):
         """Return title when called."""
@@ -46,16 +51,6 @@ class Folder(models.Model):
     Self-linked. May contain other objects.
     """
 
-    class Meta:
-        """Additional constraints."""
-
-        constraints = [UniqueConstraint(fields=['title', 'parent', 'owner'],
-                                        name='folder_unique_fields'),
-                       UniqueConstraint(fields=['title', 'owner'],
-                                        condition=Q(folder=None),
-                                        name='folder_condition_fields')
-                       ]
-
     title = models.CharField(max_length=150)
     parent = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
@@ -63,6 +58,21 @@ class Folder(models.Model):
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT)
+
+    class Meta:
+        """Metadata for Folder model."""
+
+        constraints = [
+            UniqueConstraint(
+                name='folder_title_parent_owner_key',
+                fields=['title', 'parent', 'owner']),
+
+            UniqueConstraint(
+                name='folder_title_owner_key',
+                fields=['title', 'owner'],
+                condition=Q(folder=None)
+            )
+        ]
 
     def __str__(self):
         """Return title when called."""
