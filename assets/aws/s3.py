@@ -8,7 +8,8 @@ from botocore import exceptions
 
 def upload_file(file_name, object_name=None):
     """Upload file to AWS S3 Bucket."""
-    s3_resource = boto3.resource('s3')
+    s3_resource = boto3.resource('s3', aws_access_key_id=os.getenv('AWS_KEY'),
+                                 aws_secret_access_key=os.getenv('AWS_SECRET_KEY'))
     bucket = s3_resource.Bucket(name=os.getenv('S3_BUCKET'))
 
     if object_name is None:
