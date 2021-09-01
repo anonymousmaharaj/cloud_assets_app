@@ -26,6 +26,11 @@ environ.Env.read_env()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str('SECRET_KEY')
 
+AWS_KEY = env.str('AWS_KEY')
+AWS_SECRET_KEY = env.str('AWS_SECRET_KEY')
+
+S3_BUCKET = env.str('S3_BUCKET')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG')
 
