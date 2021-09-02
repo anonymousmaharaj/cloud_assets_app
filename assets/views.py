@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from assets import forms
 from assets import models
 from assets import validators
+from assets.aws import s3
 from assets.db import queries
 
 
@@ -53,6 +54,7 @@ def user_upload_file(request):
     Render form. Get file's path and upload it on S3.
     Create new object in File table.
     """
+    # TODO: Add functionality to add to folder.
     if request.method == 'POST':
         form = forms.UploadFileForm(request.POST)
         if form.is_valid():
@@ -61,15 +63,21 @@ def user_upload_file(request):
             file_exist = validators.validate_exist_file(upload_path,
                                                         user=request.user,
                                                         folder=None)
-            if file_exist:
-                return http.HttpResponse('File already exist in folder.')
             if not validate_status:
                 return http.HttpResponse(
                     f'No such file in directory {upload_path}')
+            if file_exist:
+                return http.HttpResponse('File already exist in folder.')
+
             models.File(title=os.path.basename(upload_path),
                         owner=request.user,
                         folder=None).save()
-            return http.HttpResponse('Your file will be uploaded.')
+            if s3.upload_file(upload_path):
+                return http.HttpResponse('Your file will be uploaded.')
+            else:
+                return http.HttpResponse(
+                    'Your file already exist in target directory.'
+                )
     elif request.method == 'GET':
         form = forms.UploadFileForm()
         return render(request, 'assets/upload_file.html', {'form': form})

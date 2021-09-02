@@ -9,7 +9,7 @@ from assets import models
 
 def validate_upload_file(file_path):
     """Validate file path for exist."""
-    return os.path.exists(file_path)
+    return os.path.exists(file_path) and os.path.isfile(file_path)
 
 
 def validate_exist_file(file_path, user, folder=None):
