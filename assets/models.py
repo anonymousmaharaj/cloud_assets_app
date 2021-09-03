@@ -12,7 +12,7 @@ class File(models.Model):
     Related with Folder.
     """
 
-    title = models.CharField(max_length=150)
+    title = models.CharField(max_length=255)
     folder = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
                                null=True,
@@ -46,7 +46,7 @@ class Folder(models.Model):
     Self-linked. May contain other objects.
     """
 
-    title = models.CharField(max_length=150)
+    title = models.CharField(max_length=255)
     parent = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
                                null=True,

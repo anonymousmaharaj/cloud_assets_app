@@ -42,7 +42,7 @@ def show_page(request):
     folder_obj = get_object_or_404(models.Folder,
                                    pk=folder_id) if folder_id else None
 
-    rows = queries.get_assets_list(folder_id)
+    rows = queries.get_assets_list(folder_id, request.user.pk)
     context = {'rows': rows, 'folder_obj': folder_obj}
     return render(request, 'assets/root_page.html', context)
 
@@ -73,7 +73,7 @@ def user_upload_file(request):
                         owner=request.user,
                         folder=None).save()
             if s3.upload_file(upload_path):
-                return http.HttpResponse('Your file will be uploaded.')
+                return http.HttpResponse('Your file is uploaded.')
             else:
                 return http.HttpResponse(
                     'Your file already exist in target directory.'
