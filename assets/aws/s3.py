@@ -15,17 +15,17 @@ def create_bucket():
     return boto3.resource('s3', **conf).Bucket(name=settings.S3_BUCKET)
 
 
-def upload_file(file_name, object_name=None):
+def upload_file(file_name, user, object_name=None, ):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
     if object_name is None:
         object_name = os.path.basename(file_name)
 
-    if not check_exist(bucket, object_name):
+    if not check_exist(bucket, object_name, user):
         with open(file_name, 'rb') as file:
-            bucket.put_object(Body=file, Bucket=bucket.name, Key=object_name)
-        if check_exist(bucket, object_name):
+            bucket.put_object(Body=file, Bucket=bucket.name, Key=f'{user.username}/{object_name}')
+        if check_exist(bucket, object_name, user):
             return True
         else:
             return False
@@ -33,7 +33,7 @@ def upload_file(file_name, object_name=None):
         return False
 
 
-def check_exist(bucket, object_name):
+def check_exist(bucket, object_name, user):
     """Check file's exist in current directory."""
-    response = list(bucket.objects.filter(Prefix=object_name))
+    response = list(bucket.objects.filter(Prefix=f'{user.username}/{object_name}'))
     return True if len(response) > 0 else False

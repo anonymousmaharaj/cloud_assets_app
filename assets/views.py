@@ -72,7 +72,7 @@ def user_upload_file(request):
             models.File(title=os.path.basename(upload_path),
                         owner=request.user,
                         folder=None).save()
-            if s3.upload_file(upload_path):
+            if s3.upload_file(upload_path, request.user):
                 return http.HttpResponse('Your file is uploaded.')
             else:
                 return http.HttpResponse(
