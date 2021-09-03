@@ -24,7 +24,9 @@ def upload_file(file_name, user, object_name=None, ):
 
     if not check_exist(bucket, object_name, user):
         with open(file_name, 'rb') as file:
-            bucket.put_object(Body=file, Bucket=bucket.name, Key=f'{user.username}/{object_name}')
+            bucket.put_object(Body=file,
+                              Bucket=bucket.name,
+                              Key=f'{user.username}/{object_name}')
         if check_exist(bucket, object_name, user):
             return True
         else:
@@ -35,5 +37,6 @@ def upload_file(file_name, user, object_name=None, ):
 
 def check_exist(bucket, object_name, user):
     """Check file's exist in current directory."""
-    response = list(bucket.objects.filter(Prefix=f'{user.username}/{object_name}'))
+    response = list(bucket.objects.filter(
+        Prefix=f'{user.username}/{object_name}'))
     return True if len(response) > 0 else False

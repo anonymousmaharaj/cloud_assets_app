@@ -7,6 +7,10 @@
         <button type="submit">Upload!</button>
     </form>
     <br>
-    <a href="{% url 'root_page' %}">Back</a>
+    {% if parent_folder %}
+        <a href="/?folder={{ parent_folder }}">Back</a>
+    {% else %}
+        <a href="{% url 'root_page' %}">Back</a>
+    {% endif %}
 {% endblock %}
 

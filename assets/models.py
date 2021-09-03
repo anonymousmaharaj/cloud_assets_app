@@ -62,7 +62,6 @@ class Folder(models.Model):
                 name='assets_folder_title_parent_owner_key',
                 fields=['title', 'parent', 'owner'],
             ),
-
             models.UniqueConstraint(
                 name='assets_folder_title_owner_key',
                 fields=['title', 'owner'],

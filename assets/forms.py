@@ -11,6 +11,12 @@ class UploadFileForm(forms.Form):
     path = forms.CharField(label='path')
 
 
+class CreateFolderForm(forms.Form):
+    """Form for create new folder."""
+
+    title = forms.CharField(label='title')
+
+
 class UserLoginForm(AuthenticationForm):
     """Basic class for login."""
 

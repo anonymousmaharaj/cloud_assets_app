@@ -27,14 +27,8 @@ def show_page(request):
     validate_id_status = validators.validate_folder_id(folder_id)
     validate_params_status = validators.validate_get_params(dict(request.GET))
 
-    if not validate_id_status == 200:
-        return validate_id_status(content=render(
-            request=request,
-            template_name='assets/400_error_page.html'
-        ))
-
-    if not validate_params_status == 200:
-        return validate_params_status(content=render(
+    if not validate_id_status or not validate_params_status:
+        return http.HttpResponseBadRequest(content=render(
             request=request,
             template_name='assets/400_error_page.html'
         ))
@@ -78,9 +72,20 @@ def user_upload_file(request):
                 return http.HttpResponse(
                     'Your file already exist in target directory.'
                 )
+        else:
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/400_error_page.html'
+                ))
     elif request.method == 'GET':
         form = forms.UploadFileForm()
-        return render(request, 'assets/upload_file.html', {'form': form})
+        parent_folder = request.GET.get('folder')
+        context = {'form': form,
+                   'parent_folder': parent_folder}
+        return render(request,
+                      'assets/upload_file.html',
+                      context=context)
     else:
         return http.HttpResponseNotAllowed(['GET', 'POST'])
 
@@ -115,7 +120,60 @@ def user_register(request):
             return redirect('root_page')
         else:
             messages.error(request, 'Error!')
-    else:
+    elif request.method == 'GET':
         form = forms.UserRegisterForm()
-    context = {'form': form}
-    return render(request, 'assets/register.html', context=context)
+        context = {'form': form}
+        return render(request,
+                      'assets/register.html',
+                      context=context)
+    else:
+        return http.HttpResponseNotAllowed(['GET', 'POST'])
+
+
+@login_required(login_url='/login/')
+def create_folder(request):
+    """View for create new folder."""
+    if request.method == 'POST':
+        form = forms.CreateFolderForm(request.POST)
+        if form.is_valid():
+            parent_folder = request.GET.get('folder')
+            new_folder_title = request.POST.get('title')
+
+            if parent_folder == '':
+                parent_folder = None
+
+            id_status = validators.validate_id_for_create_folder(
+                parent_folder)
+            params_status = validators.validate_get_params(
+                dict(request.GET))
+            name_status = validators.validate_new_folder_name(
+                new_folder_title)
+
+            if (not id_status or
+                    not params_status or
+                    not name_status):
+                return http.HttpResponseBadRequest(content=render(
+                    request=request,
+                    template_name='assets/400_error_page.html'
+                ))
+
+            models.Folder(title=new_folder_title,
+                          owner=request.user,
+                          parent_id=parent_folder).save()
+            return redirect('root_page')
+        else:
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/400_error_page.html'
+                ))
+    elif request.method == 'GET':
+        form = forms.CreateFolderForm()
+        parent_folder = request.GET.get('folder')
+        context = {'form': form,
+                   'parent_folder': parent_folder}
+        return render(request,
+                      'assets/create_folder.html',
+                      context=context)
+    else:
+        return http.HttpResponseNotAllowed(['GET', 'POST'])

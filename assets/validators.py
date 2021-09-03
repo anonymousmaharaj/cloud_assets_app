@@ -2,8 +2,6 @@
 
 import os.path
 
-from django.http import HttpResponseBadRequest
-
 from assets import models
 
 
@@ -25,8 +23,8 @@ def validate_folder_id(folder_id):
     """Validate value of 'folder' param."""
     if folder_id is not None:
         if not folder_id.isdigit():
-            return HttpResponseBadRequest
-    return 200
+            return False
+    return True
 
 
 def validate_get_params(params):
@@ -34,5 +32,20 @@ def validate_get_params(params):
     accept_params = ['folder']
     for param in params:
         if param not in accept_params:
-            return HttpResponseBadRequest
-    return 200
+            return False
+    return True
+
+
+def validate_id_for_create_folder(folder_id):
+    """Validate value of 'folder' param for create new folder."""
+    if folder_id is None:
+        return True
+    elif folder_id.isdigit():
+        return True
+    else:
+        return False
+
+
+def validate_new_folder_name(folder_name):
+    """Validate folder's name."""
+    return False if len(folder_name) > 255 else True
