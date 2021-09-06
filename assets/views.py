@@ -52,21 +52,40 @@ def user_upload_file(request):
     if request.method == 'POST':
         form = forms.UploadFileForm(request.POST)
         if form.is_valid():
+            parent_folder = request.GET.get('folder')
+            if parent_folder == '':
+                parent_folder = None
+
             upload_path = request.POST.get('path')
+            id_status = validators.validate_id_for_folder(parent_folder)
             validate_status = validators.validate_upload_file(upload_path)
             file_exist = validators.validate_exist_file(upload_path,
                                                         user=request.user,
                                                         folder=None)
+            if not id_status:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/400_error_page.html'
+                    ))
             if not validate_status:
                 return http.HttpResponse(
                     f'No such file in directory {upload_path}')
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
-            models.File(title=os.path.basename(upload_path),
-                        owner=request.user,
-                        folder=None).save()
-            if s3.upload_file(upload_path, request.user):
+            parent_folder = models.Folder.objects.filter(
+                pk=parent_folder)
+
+            if len(parent_folder) < 1:
+                parent_folder = None
+            else:
+                parent_folder = parent_folder[0]
+
+            if s3.upload_file(upload_path, request.user, parent_folder):
+                models.File(title=os.path.basename(upload_path),
+                            owner=request.user,
+                            folder=parent_folder).save()
                 return http.HttpResponse('Your file is uploaded.')
             else:
                 return http.HttpResponse(
@@ -142,7 +161,7 @@ def create_folder(request):
             if parent_folder == '':
                 parent_folder = None
 
-            id_status = validators.validate_id_for_create_folder(
+            id_status = validators.validate_id_for_folder(
                 parent_folder)
             params_status = validators.validate_get_params(
                 dict(request.GET))
@@ -160,6 +179,7 @@ def create_folder(request):
             models.Folder(title=new_folder_title,
                           owner=request.user,
                           parent_id=parent_folder).save()
+            # TODO: Make redirect to last page
             return redirect('root_page')
         else:
             return http.HttpResponseBadRequest(

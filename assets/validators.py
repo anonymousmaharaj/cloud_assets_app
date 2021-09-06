@@ -36,8 +36,11 @@ def validate_get_params(params):
     return True
 
 
-def validate_id_for_create_folder(folder_id):
-    """Validate value of 'folder' param for create new folder."""
+def validate_id_for_folder(folder_id):
+    """Validate value of 'folder' param.
+
+    Using for create new folder and upload file in to.
+    """
     if folder_id is None:
         return True
     elif folder_id.isdigit():
