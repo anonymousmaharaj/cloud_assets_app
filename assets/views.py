@@ -30,7 +30,7 @@ def show_page(request):
     if not validate_id_status or not validate_params_status:
         return http.HttpResponseBadRequest(content=render(
             request=request,
-            template_name='assets/400_error_page.html'
+            template_name='assets/errors/400_error_page.html'
         ))
 
     folder_obj = get_object_or_404(models.Folder,
@@ -59,14 +59,16 @@ def user_upload_file(request):
             upload_path = request.POST.get('path')
             id_status = validators.validate_id_for_folder(parent_folder)
             validate_status = validators.validate_upload_file(upload_path)
-            file_exist = validators.validate_exist_file(upload_path,
-                                                        user=request.user,
-                                                        folder=None)
+            file_exist = validators.validate_exist_file_in_folder(
+                upload_path,
+                user=request.user,
+                folder=parent_folder)
+
             if not id_status:
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
-                        template_name='assets/400_error_page.html'
+                        template_name='assets/errors/400_error_page.html'
                     ))
             if not validate_status:
                 return http.HttpResponse(
@@ -95,7 +97,7 @@ def user_upload_file(request):
             return http.HttpResponseBadRequest(
                 content=render(
                     request=request,
-                    template_name='assets/400_error_page.html'
+                    template_name='assets/errors/400_error_page.html'
                 ))
     elif request.method == 'GET':
         form = forms.UploadFileForm()
@@ -157,6 +159,7 @@ def create_folder(request):
         if form.is_valid():
             parent_folder = request.GET.get('folder')
             new_folder_title = request.POST.get('title')
+            new_folder_title = new_folder_title.strip()
 
             if parent_folder == '':
                 parent_folder = None
@@ -167,13 +170,16 @@ def create_folder(request):
                 dict(request.GET))
             name_status = validators.validate_new_folder_name(
                 new_folder_title)
+            folder_exist_status = validators.validate_exist_folder(
+                parent_folder)
 
             if (not id_status or
                     not params_status or
-                    not name_status):
+                    not name_status or
+                    not folder_exist_status):
                 return http.HttpResponseBadRequest(content=render(
                     request=request,
-                    template_name='assets/400_error_page.html'
+                    template_name='assets/errors/400_error_page.html'
                 ))
 
             models.Folder(title=new_folder_title,
@@ -185,7 +191,7 @@ def create_folder(request):
             return http.HttpResponseBadRequest(
                 content=render(
                     request=request,
-                    template_name='assets/400_error_page.html'
+                    template_name='assets/errors/400_error_page.html'
                 ))
     elif request.method == 'GET':
         form = forms.CreateFolderForm()
@@ -197,3 +203,46 @@ def create_folder(request):
                       context=context)
     else:
         return http.HttpResponseNotAllowed(['GET', 'POST'])
+
+
+@login_required(login_url='/login/')
+def download_file(request):
+    """View for download file."""
+    if request.method == 'GET':
+        file_id = request.GET.get('file')
+
+        validate_id_status = validators.validate_file_id(file_id)
+        validate_file_exist_status = validators.validate_exist_file(
+            request.user,
+            file_id)
+        validate_params_status = validators.validate_get_params(
+            dict(request.GET))
+        validate_permission_status = validators.validate_permission(
+            request.user,
+            file_id
+        )
+        if not validate_permission_status:
+            return http.HttpResponseForbidden(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/403_error_page.html'
+                ))
+
+        if not validate_file_exist_status:
+            return http.HttpResponseNotFound(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/404_error_page.html'
+                ))
+
+        if not validate_id_status or not validate_params_status:
+            return http.HttpResponseBadRequest(content=render(
+                request=request,
+                template_name='assets/errors/400_error_page.html'
+            ))
+
+        download_url = s3.get_url(request.user, file_id)
+
+        return redirect(download_url)
+    else:
+        return http.HttpResponseNotAllowed(['GET'])

@@ -12,7 +12,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    <a href="upload_file?folder={{ folder_obj.pk }}">Upload File in current directory</a> | <a href="create-folder?folder={{ folder_obj.pk}}">Create new folder</a>
+    <a href="upload_file/?folder={{ folder_obj.pk }}">Upload File in current directory</a> | <a href="create-folder/?folder={{ folder_obj.pk}}">Create new folder</a>
     <hr>
         <div>
             {% if folder_obj %}
@@ -26,7 +26,7 @@
                 {% if row.is_folder %}
                     <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
                 {% else %}
-                    {{ row.title }} <br>
+                    {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a> <br>
                 {% endif %}
             {% endfor %}
         </div>

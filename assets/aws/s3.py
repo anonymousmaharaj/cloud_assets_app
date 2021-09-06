@@ -22,14 +22,22 @@ def create_path(user, parent_folder):
     if parent_folder is None:
         return user.username
 
-    path_objects = []
-
+    path_objects = [parent_folder.title]
     while parent_folder.parent is not None:
         parent_folder = models.Folder.objects.get(pk=parent_folder.parent.pk)
         path_objects.append(parent_folder.title)
     path_objects.reverse()
     full_path = os.path.join(user.username, *path_objects)
     return full_path
+
+
+def get_url(user, file_id):
+    """Get url for download file."""
+    file_obj = models.File.objects.get(pk=file_id)
+    full_path = create_path(user, file_obj.folder)
+    full_path = os.path.join(full_path, file_obj.title)
+    full_url = f'https://{settings.S3_BUCKET}.s3.amazonaws.com/{full_path}'
+    return full_url
 
 
 def upload_file(file_name, user, parent_folder, object_name=None, ):
