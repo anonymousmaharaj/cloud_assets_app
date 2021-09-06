@@ -246,3 +246,50 @@ def download_file(request):
         return redirect(download_url)
     else:
         return http.HttpResponseNotAllowed(['GET'])
+
+
+@login_required(login_url='/login/')
+def delete_file(request):
+    """View for delete file."""
+    if request.method == 'GET':
+        file_id = request.GET.get('file')
+
+        validate_id_status = validators.validate_file_id(file_id)
+        validate_file_exist_status = validators.validate_exist_file(
+            request.user,
+            file_id)
+        validate_params_status = validators.validate_get_params(
+            dict(request.GET))
+        validate_permission_status = validators.validate_permission(
+            request.user,
+            file_id
+        )
+        if not validate_permission_status:
+            return http.HttpResponseForbidden(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/403_error_page.html'
+                ))
+
+        if not validate_file_exist_status:
+            return http.HttpResponseNotFound(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/404_error_page.html'
+                ))
+
+        if not validate_id_status or not validate_params_status:
+            return http.HttpResponseBadRequest(content=render(
+                request=request,
+                template_name='assets/errors/400_error_page.html'
+            ))
+
+        if s3.delete_file(request.user, file_id):
+            models.File.objects.get(pk=file_id).delete()
+            return redirect(request.META.get('HTTP_REFERER'))
+        else:
+            return http.HttpResponse('Cannot delete this file or this file'
+                                     'doesn`t exist')
+
+    else:
+        return http.HttpResponseNotAllowed(['GET'])

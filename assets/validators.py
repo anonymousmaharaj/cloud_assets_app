@@ -76,6 +76,7 @@ def validate_permission(user, file_id):
 
 
 def validate_exist_folder(parent_folder):
+    """Validate folder exist."""
     if parent_folder is not None:
         folders_list = models.Folder.objects.filter(pk=parent_folder)
         return len(folders_list) > 0

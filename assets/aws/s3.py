@@ -70,3 +70,23 @@ def check_exist(bucket, object_name, path):
     response = list(bucket.objects.filter(
         Prefix=f'{path}/{object_name}'))
     return True if len(response) > 0 else False
+
+
+def delete_file(user, file_id):
+    """Delete file from S3."""
+    bucket = create_bucket()
+    file_obj = models.File.objects.get(pk=file_id)
+    full_path = create_path(user, file_obj.folder)
+    # TODO: Fix validation.
+    if not check_exist(bucket, file_obj.title, full_path):
+        return False
+    full_path = os.path.join(full_path, file_obj.title)
+
+    delete_dict = {
+        'Objects': [
+            {'Key': full_path}
+        ]
+    }
+    response = bucket.delete_objects(Delete=delete_dict)
+    status_code = response['ResponseMetadata']['HTTPStatusCode']
+    return True if status_code == 200 else False

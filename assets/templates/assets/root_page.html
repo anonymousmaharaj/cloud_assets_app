@@ -26,7 +26,7 @@
                 {% if row.is_folder %}
                     <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
                 {% else %}
-                    {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a> <br>
+                    {{ row.title }} <a href="download/?file={{ row.id }}">Download</a>  | <a href="delete/?file={{ row.id }}">Delete</a><br>
                 {% endif %}
             {% endfor %}
         </div>
