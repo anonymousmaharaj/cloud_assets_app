@@ -71,9 +71,11 @@ def user_upload_file(request):
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
+
             if not validate_status:
                 return http.HttpResponse(
                     f'No such file in directory {upload_path}')
+
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
@@ -173,14 +175,16 @@ def create_folder(request):
                 new_folder_title)
             folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
-            title_status = validators.validate_exist_folder(parent_folder,
-                                                            new_folder_title,
-                                                            request.user)
+            title_exist_status = validators.validate_exist_folder(
+                parent_folder,
+                new_folder_title,
+                request.user)
 
-            if title_status:
+            if title_exist_status:
                 return http.HttpResponse(
                     'Folder with this title already exist '
                     'in target directory.')
+
             if (not id_status or
                     not params_status or
                     not name_status or
@@ -230,6 +234,7 @@ def download_file(request):
             request.user,
             file_id
         )
+
         if not validate_permission_status:
             return http.HttpResponseForbidden(
                 content=render(
@@ -274,6 +279,7 @@ def delete_file(request):
             request.user,
             file_id
         )
+
         if not validate_permission_status:
             return http.HttpResponseForbidden(
                 content=render(
@@ -312,28 +318,30 @@ def delete_folder(request):
     if request.method == 'GET':
         folder_id = request.GET.get('folder')
         id_status = validators.validate_id_for_folder(folder_id)
+
         params_status = validators.validate_get_params(
             dict(request.GET))
         folder_exist_status = validators.validate_parent_folder(
             folder_id)
-        permission_status = validators.validate_folder_permission(
+        folder_permission_status = validators.validate_folder_permission(
             request.user,
             folder_id)
 
-        if not permission_status:
+        if not folder_permission_status:
             return http.HttpResponseForbidden(
                 content=render(
                     request=request,
                     template_name='assets/errors/403_error_page.html'
                 ))
+
         if (not id_status or
                 not params_status or
                 not folder_exist_status):
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+            return http.HttpResponseBadRequest(content=render(
+                request=request,
+                template_name='assets/errors/400_error_page.html'
+            ))
+
         if s3.delete_folders(request.user, folder_id):
             queries.delete_recursive(folder_id)
             return redirect(request.META.get('HTTP_REFERER'))
@@ -342,3 +350,65 @@ def delete_folder(request):
 
     else:
         return http.HttpResponseNotAllowed(['GET'])
+
+
+def move_file(request):
+    """View for move file."""
+    if request.method == 'POST':
+        form = forms.MoveFileForm(request.POST, user=request.user)
+        if form.is_valid():
+            new_folder_id = request.POST.get('new_folder')
+            file_id = request.GET.get('file')
+
+            if new_folder_id == 'None':
+                new_folder_id = None
+
+            file_status = validators.validate_file_id(file_id)
+            folder_exist_status = validators.validate_parent_folder(
+                new_folder_id)
+            file_permission_status = validators.validate_file_permission(
+                request.user,
+                file_id
+            )
+            file_exist_status = validators.validate_exist_file(request.user, file_id)
+
+            if new_folder_id is not None:
+                folder_permission_status = validators.validate_folder_permission(
+                    request.user,
+                    new_folder_id
+                )
+            else:
+                folder_permission_status = True
+
+            if not folder_permission_status or not file_permission_status:
+                return http.HttpResponseForbidden(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/403_error_page.html'
+                    ))
+
+            if (not file_status or
+                    not folder_exist_status or
+                    not file_exist_status):
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
+            if s3.move_file(request.user, new_folder_id, file_id):
+                queries.move_file(request.user, new_folder_id, file_id)
+                return redirect('root_page')
+            else:
+                return http.HttpResponse('Cannot move this folder. '
+                                         'Or this file already exist in '
+                                         'target directory.')
+
+    elif request.method == 'GET':
+        form = forms.MoveFileForm(user=request.user)
+        context = {'form': form}
+        return render(request,
+                      'assets/move_file.html',
+                      context=context)
+    else:
+        return http.HttpResponseNotAllowed(['GET', 'POST'])

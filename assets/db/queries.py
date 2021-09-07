@@ -44,3 +44,15 @@ def delete_recursive(folder_id):
         for folder in folders:
             delete_recursive(folder.pk)
     models.Folder.objects.filter(pk=folder_id).delete()
+
+
+def get_personal_folders(user):
+    """Return all folders in form."""
+    return models.Folder.objects.filter(owner=user)
+
+
+def move_file(user, new_folder_id, file_id):
+    """Move file."""
+    file = models.File.objects.get(pk=file_id)
+    file.folder_id = new_folder_id
+    file.save()

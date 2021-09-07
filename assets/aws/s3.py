@@ -3,7 +3,7 @@
 import os
 
 import boto3
-import botocore
+from botocore.exceptions import ClientError
 from django.conf import settings
 
 from assets import models
@@ -100,7 +100,35 @@ def delete_folders(user, folder_id):
     full_path = create_path(user, folder_obj)
     try:
         bucket.objects.filter(Prefix=f'{full_path}').delete()
-    except botocore.exceptions.ClientError:
+    except ClientError:
         return False
     else:
         return True
+
+
+def move_file(user, new_folder, file_id):
+    """Copy file and delete old."""
+    bucket = create_bucket()
+    file_obj = models.File.objects.get(pk=file_id)
+    if new_folder is not None:
+        new_folder = models.Folder.objects.get(pk=new_folder)
+    new_full_path = create_path(user, new_folder)
+    old_full_path = create_path(user, file_obj.folder)
+    if not check_exist(bucket, file_obj, new_full_path):
+        bucket = create_bucket()
+        copy_source = {
+            'Bucket': f'{bucket.name}',
+            'Key': f'{old_full_path}/{file_obj.title}'
+        }
+        try:
+            bucket.copy(
+                copy_source,
+                f'{new_full_path}/{file_obj.title}',
+                ExtraArgs={'ACL': 'public-read'})
+            delete_file(user, file_id)
+        except ClientError:
+            return False
+        else:
+            return True
+    else:
+        return False
