@@ -30,7 +30,7 @@
             {% else %}
                 {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a>  |
                 <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
-                <a href="move/?file={{ row.id }}">Move</a><br>
+                <a href="move/?file={{ row.id }}">Move</a> | <a href="rename-file/?file={{ row.id }}">Rename</a><br>
             {% endif %}
         {% endfor %}
     </div>

@@ -132,3 +132,29 @@ def move_file(user, new_folder, file_id):
             return True
     else:
         return False
+
+
+def rename_file(user, file_id, new_title):
+    """Rename file. Copy with new key and delete old."""
+    bucket = create_bucket()
+    file_obj = models.File.objects.get(pk=file_id)
+    current_folder = file_obj.folder
+    full_path = create_path(user, current_folder)
+    if not check_exist(bucket, new_title, full_path):
+        bucket = create_bucket()
+        copy_source = {
+            'Bucket': f'{bucket.name}',
+            'Key': f'{full_path}/{file_obj.title}'
+        }
+        try:
+            bucket.copy(
+                copy_source,
+                f'{full_path}/{new_title}',
+                ExtraArgs={'ACL': 'public-read'})
+            delete_file(user, file_id)
+        except ClientError:
+            return False
+        else:
+            return True
+    else:
+        return False

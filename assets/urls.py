@@ -16,5 +16,6 @@ urlpatterns = [
     path('download/', views.download_file, name='download_file'),
     path('delete/', views.delete_file, name='delete_file'),
     path('delete-folder/', views.delete_folder, name='delete_folder'),
-    path('move/', views.move_file, name='move_file')
+    path('move/', views.move_file, name='move_file'),
+    path('rename-file/', views.rename_file, name='rename_file')
 ]

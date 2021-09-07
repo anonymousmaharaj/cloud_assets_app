@@ -7,6 +7,12 @@ from django.contrib.auth.models import User
 from assets import models
 
 
+class RenameFileForm(forms.Form):
+    """Form for rename file."""
+
+    new_title = forms.CharField(label='new_title')
+
+
 class MoveFileForm(forms.Form):
     """Form to move file."""
 
