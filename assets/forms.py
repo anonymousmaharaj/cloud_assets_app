@@ -14,7 +14,7 @@ class UploadFileForm(forms.Form):
 class CreateFolderForm(forms.Form):
     """Form for create new folder."""
 
-    title = forms.CharField(label='title')
+    title = forms.CharField(label='title', max_length=255)
 
 
 class UserLoginForm(AuthenticationForm):

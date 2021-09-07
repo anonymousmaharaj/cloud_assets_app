@@ -3,6 +3,7 @@
 import os
 
 import boto3
+import botocore
 from django.conf import settings
 
 from assets import models
@@ -90,3 +91,16 @@ def delete_file(user, file_id):
     response = bucket.delete_objects(Delete=delete_dict)
     status_code = response['ResponseMetadata']['HTTPStatusCode']
     return True if status_code == 200 else False
+
+
+def delete_folders(user, folder_id):
+    """Delete folder with files from S3."""
+    bucket = create_bucket()
+    folder_obj = models.Folder.objects.get(pk=folder_id)
+    full_path = create_path(user, folder_obj)
+    try:
+        bucket.objects.filter(Prefix=f'{full_path}').delete()
+    except botocore.exceptions.ClientError:
+        return False
+    else:
+        return True

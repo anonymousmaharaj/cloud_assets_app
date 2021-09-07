@@ -2,6 +2,8 @@
 
 from django.db import connection
 
+from assets import models
+
 
 def get_assets_list(folder_id, user_pk):
     """Raw SQL query for receiving assets of folder or a root page."""
@@ -32,3 +34,13 @@ def dictfetchall(cursor):
         dict(zip(columns, row))
         for row in cursor.fetchall()
     ]
+
+
+def delete_recursive(folder_id):
+    """Recursive deleting folders and files."""
+    folders = models.Folder.objects.filter(parent=folder_id)
+    models.File.objects.filter(folder=folder_id).delete()
+    if len(folders) > 0:
+        for folder in folders:
+            delete_recursive(folder.pk)
+    models.Folder.objects.filter(pk=folder_id).delete()

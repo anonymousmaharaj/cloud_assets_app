@@ -12,22 +12,25 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    <a href="upload_file/?folder={{ folder_obj.pk }}">Upload File in current directory</a> | <a href="create-folder/?folder={{ folder_obj.pk}}">Create new folder</a>
+    <a href="upload_file/?folder={{ folder_obj.pk }}">Upload File in current directory</a> |
+    <a href="create-folder/?folder={{ folder_obj.pk }}">Create new folder</a>
     <hr>
-        <div>
-            {% if folder_obj %}
-                {% if folder_obj.parent_id is None %}
-                    <a href="{% url 'root_page' %}">..</a><br>
-                {% else %}
-                    <a href="?folder={{ folder_obj.parent_id }}">..</a><br>
-                {% endif %}
+    <div>
+        {% if folder_obj %}
+            {% if folder_obj.parent_id is None %}
+                <a href="{% url 'root_page' %}">..</a><br>
+            {% else %}
+                <a href="?folder={{ folder_obj.parent_id }}">..</a>
+                <br>
             {% endif %}
-            {% for row in rows %}
-                {% if row.is_folder %}
-                    <a href="/?folder={{ row.id }}">{{ row.title }}</a> <br>
-                {% else %}
-                    {{ row.title }} <a href="download/?file={{ row.id }}">Download</a>  | <a href="delete/?file={{ row.id }}">Delete</a><br>
-                {% endif %}
-            {% endfor %}
-        </div>
+        {% endif %}
+        {% for row in rows %}
+            {% if row.is_folder %}
+                <a href="/?folder={{ row.id }}">{{ row.title }}</a> | <a href="delete-folder/?folder={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a><br>
+            {% else %}
+                {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a>  |
+                <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a><br>
+            {% endif %}
+        {% endfor %}
+    </div>
 {% endblock %}

@@ -28,10 +28,11 @@ def show_page(request):
     validate_params_status = validators.validate_get_params(dict(request.GET))
 
     if not validate_id_status or not validate_params_status:
-        return http.HttpResponseBadRequest(content=render(
-            request=request,
-            template_name='assets/errors/400_error_page.html'
-        ))
+        return http.HttpResponseBadRequest(
+            content=render(
+                request=request,
+                template_name='assets/errors/400_error_page.html'
+            ))
 
     folder_obj = get_object_or_404(models.Folder,
                                    pk=folder_id) if folder_id else None
@@ -170,17 +171,25 @@ def create_folder(request):
                 dict(request.GET))
             name_status = validators.validate_new_folder_name(
                 new_folder_title)
-            folder_exist_status = validators.validate_exist_folder(
+            folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
+            title_status = validators.validate_exist_folder(parent_folder,
+                                                            new_folder_title,
+                                                            request.user)
 
+            if title_status:
+                return http.HttpResponse(
+                    'Folder with this title already exist '
+                    'in target directory.')
             if (not id_status or
                     not params_status or
                     not name_status or
                     not folder_exist_status):
-                return http.HttpResponseBadRequest(content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
 
             models.Folder(title=new_folder_title,
                           owner=request.user,
@@ -217,7 +226,7 @@ def download_file(request):
             file_id)
         validate_params_status = validators.validate_get_params(
             dict(request.GET))
-        validate_permission_status = validators.validate_permission(
+        validate_permission_status = validators.validate_file_permission(
             request.user,
             file_id
         )
@@ -236,10 +245,11 @@ def download_file(request):
                 ))
 
         if not validate_id_status or not validate_params_status:
-            return http.HttpResponseBadRequest(content=render(
-                request=request,
-                template_name='assets/errors/400_error_page.html'
-            ))
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
 
         download_url = s3.get_url(request.user, file_id)
 
@@ -260,7 +270,7 @@ def delete_file(request):
             file_id)
         validate_params_status = validators.validate_get_params(
             dict(request.GET))
-        validate_permission_status = validators.validate_permission(
+        validate_permission_status = validators.validate_file_permission(
             request.user,
             file_id
         )
@@ -279,10 +289,11 @@ def delete_file(request):
                 ))
 
         if not validate_id_status or not validate_params_status:
-            return http.HttpResponseBadRequest(content=render(
-                request=request,
-                template_name='assets/errors/400_error_page.html'
-            ))
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
 
         if s3.delete_file(request.user, file_id):
             models.File.objects.get(pk=file_id).delete()
@@ -290,6 +301,44 @@ def delete_file(request):
         else:
             return http.HttpResponse('Cannot delete this file or this file'
                                      'doesn`t exist')
+
+    else:
+        return http.HttpResponseNotAllowed(['GET'])
+
+
+@login_required(login_url='/login/')
+def delete_folder(request):
+    """Delete folder with all files inside."""
+    if request.method == 'GET':
+        folder_id = request.GET.get('folder')
+        id_status = validators.validate_id_for_folder(folder_id)
+        params_status = validators.validate_get_params(
+            dict(request.GET))
+        folder_exist_status = validators.validate_parent_folder(
+            folder_id)
+        permission_status = validators.validate_folder_permission(
+            request.user,
+            folder_id)
+
+        if not permission_status:
+            return http.HttpResponseForbidden(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/403_error_page.html'
+                ))
+        if (not id_status or
+                not params_status or
+                not folder_exist_status):
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
+        if s3.delete_folders(request.user, folder_id):
+            queries.delete_recursive(folder_id)
+            return redirect(request.META.get('HTTP_REFERER'))
+        else:
+            return http.HttpResponse('Cannot delete this folder.')
 
     else:
         return http.HttpResponseNotAllowed(['GET'])
