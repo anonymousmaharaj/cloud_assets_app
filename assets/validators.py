@@ -62,7 +62,7 @@ def validate_id_for_folder(folder_id):
         return False
 
 
-def validate_new_folder_name(folder_name):
+def validate_new_name(folder_name):
     """Validate folder's name."""
     return False if len(folder_name) > 255 else True
 
@@ -84,7 +84,7 @@ def validate_folder_permission(user, folder_id):
 
 
 def validate_parent_folder(parent_folder):
-    """Validate folder exist."""
+    """Validate parents folder exist."""
     if parent_folder is not None:
         folders_list = models.Folder.objects.filter(pk=parent_folder)
         return len(folders_list) > 0
@@ -92,10 +92,28 @@ def validate_parent_folder(parent_folder):
         return True
 
 
-def validate_exist_folder(parent_folder, title, user):
-    """Validate folder's title."""
+def validate_exist_parent_folder(parent_folder, title, user):
+    """Validate parents folder exist."""
     folders_list = models.Folder.objects.filter(
         parent=parent_folder,
         owner=user,
         title=title)
+    return len(folders_list) > 0
+
+
+def validate_exist_folder_new_title(folder_id, new_title, user):
+    """Validate new folder's title for rename."""
+    folder_obj = models.Folder.objects.filter(pk=folder_id)
+    if len(folder_obj) == 0:
+        return False
+    parent_folder_obj = folder_obj[0].parent
+    folders_list = models.Folder.objects.filter(parent=parent_folder_obj,
+                                                owner=user,
+                                                title=new_title)
+    return len(folders_list) > 0
+
+
+def validate_exist_current_folder(folder_id, title, user):
+    """Validate folder's exist."""
+    folders_list = models.Folder.objects.filter(pk=folder_id)
     return len(folders_list) > 0

@@ -158,3 +158,47 @@ def rename_file(user, file_id, new_title):
             return True
     else:
         return False
+
+
+def rename_folder(user, folder_id, new_title):
+    """Rename folder. Copy all assets in new place and delete old."""
+    bucket = create_bucket()
+    folder_obj = models.Folder.objects.get(pk=folder_id)
+    full_path = create_path(user, folder_obj)
+    path_list = full_path.split('/')
+    path_list[-1] = new_title
+    new_path = '/'.join(path_list)
+
+    for obj in bucket.objects.filter(Prefix=full_path):
+        file_key = obj.key
+        if not file_key.endswith('/'):
+            bucket_key_path = file_key.split('/')
+            second_key_path = []
+            for row in bucket_key_path[::-1]:
+                if not row == folder_obj.title:
+                    second_key_path.append(row)
+                else:
+                    break
+            second_key_path.reverse()
+            second_key_path = '/'.join(second_key_path)
+            full_new_path = f'{new_path}/{second_key_path}'
+
+            copy_source = {
+                'Bucket': f'{bucket.name}',
+                'Key': file_key
+            }
+            try:
+                bucket.copy(
+                    copy_source,
+                    full_new_path,
+                    ExtraArgs={'ACL': 'public-read'})
+
+                delete_dict = {
+                    'Objects': [
+                        {'Key': file_key}
+                    ]
+                }
+                bucket.delete_objects(Delete=delete_dict)
+            except ClientError:
+                return False
+    return True

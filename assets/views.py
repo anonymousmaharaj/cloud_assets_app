@@ -179,11 +179,11 @@ def create_folder(request):
                 parent_folder)
             params_status = validators.validate_get_params(
                 dict(request.GET))
-            name_status = validators.validate_new_folder_name(
+            name_status = validators.validate_new_name(
                 new_folder_title)
             folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
-            title_exist_status = validators.validate_exist_folder(
+            title_exist_status = validators.validate_exist_parent_folder(
                 parent_folder,
                 new_folder_title,
                 request.user)
@@ -235,9 +235,9 @@ def download_file(request):
         validate_id_status = validators.validate_file_id(file_id)
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id)
-        validate_params_status = validators.validate_get_params(
-            dict(request.GET))
+            file_id
+        )
+        validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
             file_id
@@ -280,9 +280,9 @@ def delete_file(request):
         validate_id_status = validators.validate_file_id(file_id)
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id)
-        validate_params_status = validators.validate_get_params(
-            dict(request.GET))
+            file_id
+        )
+        validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
             file_id
@@ -330,11 +330,11 @@ def delete_folder(request):
         params_status = validators.validate_get_params(
             dict(request.GET))
         folder_id_status = validators.validate_folder_id(folder_id)
-        folder_exist_status = validators.validate_parent_folder(
-            folder_id)
+        folder_exist_status = validators.validate_parent_folder(folder_id)
         folder_permission_status = validators.validate_folder_permission(
             request.user,
-            folder_id)
+            folder_id
+        )
 
         if not folder_permission_status:
             return http.HttpResponseForbidden(
@@ -384,8 +384,7 @@ def move_file(request):
                 new_folder_id = None
 
             file_status = validators.validate_file_id(file_id)
-            folder_exist_status = validators.validate_parent_folder(
-                new_folder_id)
+            folder_exist_status = validators.validate_parent_folder(new_folder_id)
             file_permission_status = validators.validate_file_permission(
                 request.user,
                 file_id
@@ -453,7 +452,6 @@ def rename_file(request):
 
             file_id = request.GET.get('file')
             new_title = new_title.strip()
-
             file_status = validators.validate_file_id(file_id)
             file_permission_status = validators.validate_file_permission(
                 request.user,
@@ -493,6 +491,84 @@ def rename_file(request):
 
     elif request.method == 'GET':
         form = forms.RenameFileForm()
+        context = {'form': form}
+        return render(request,
+                      'assets/rename_file.html',
+                      context=context)
+    else:
+        return http.HttpResponseNotAllowed(['GET', 'POST'])
+
+
+@login_required(login_url='/login/')
+def rename_folder(request):
+    """View for rename folder."""
+    if request.method == 'POST':
+        form = forms.RenameFolderForm(request.POST)
+        if form.is_valid():
+            new_title = request.POST.get('new_title', None)
+
+            if new_title is None:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
+            folder_id = request.GET.get('folder')
+            new_title = new_title.strip()
+
+            folder_id_status = validators.validate_folder_id(folder_id)
+            folder_permission_status = validators.validate_folder_permission(
+                request.user,
+                folder_id
+            )
+            folder_exist_status = validators.validate_exist_current_folder(
+                folder_id,
+                new_title,
+                request.user
+            )
+            params_status = validators.validate_get_params(dict(request.GET))
+            new_folder_exist = validators.validate_exist_folder_new_title(
+                folder_id,
+                new_title,
+                request.user
+            )
+
+            if new_folder_exist:
+                return http.HttpResponse('Cannot rename folder. Check current directory '
+                                         'for same title.')
+
+            if (not folder_id_status or
+                    not params_status or
+                    not folder_exist_status):
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
+            if not folder_permission_status:
+                return http.HttpResponseForbidden(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/403_error_page.html'
+                    ))
+
+            if s3.rename_folder(request.user, folder_id, new_title):
+                queries.rename_folder(folder_id, new_title)
+                return redirect('root_page')
+            else:
+                return http.HttpResponse('Cannot rename file. Check current directory '
+                                         'for same title.')
+        else:
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
+
+    elif request.method == 'GET':
+        form = forms.RenameFolderForm()
         context = {'form': form}
         return render(request,
                       'assets/rename_file.html',

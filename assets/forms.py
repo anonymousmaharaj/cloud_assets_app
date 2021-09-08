@@ -7,6 +7,12 @@ from django.contrib.auth.models import User
 from assets import models
 
 
+class RenameFolderForm(forms.Form):
+    """Form for rename folder."""
+
+    new_title = forms.CharField(label='new_title')
+
+
 class RenameFileForm(forms.Form):
     """Form for rename file."""
 

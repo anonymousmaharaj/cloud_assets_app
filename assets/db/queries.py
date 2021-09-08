@@ -63,3 +63,10 @@ def rename_file(file_id, new_title):
     file = models.File.objects.get(pk=file_id)
     file.title = new_title
     file.save()
+
+
+def rename_folder(folder_id, new_title):
+    """Rename folder in DB."""
+    folder_obj = models.Folder.objects.get(pk=folder_id)
+    folder_obj.title = new_title
+    folder_obj.save()
