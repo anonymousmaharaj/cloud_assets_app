@@ -14,15 +14,15 @@ def validate_exist_file_in_folder(file_path, user, folder=None):
     """Validate exists file in DB in folder."""
     file_exist = models.File.objects.filter(title=os.path.basename(file_path),
                                             owner=user,
-                                            folder=folder)
-    return len(file_exist) > 0
+                                            folder=folder).exists()
+    return file_exist
 
 
 def validate_exist_file(user, file_id):
     """Validate exists file in DB."""
     file_exist = models.File.objects.filter(pk=file_id,
-                                            owner=user)
-    return len(file_exist) > 0
+                                            owner=user).exists()
+    return file_exist
 
 
 # TODO: Fix both responses below
@@ -69,25 +69,27 @@ def validate_new_name(folder_name):
 
 def validate_file_permission(user, file_id):
     """Validate permissions for the file."""
-    file_obj = models.File.objects.filter(pk=file_id)
-    if len(file_obj) > 0:
-        return True if file_obj[0].owner == user else False
+    file_obj = models.File.objects.filter(pk=file_id).exists()
+    if file_obj:
+        file_obj = models.File.objects.get(pk=file_id)
+        return True if file_obj.owner == user else False
     return False
 
 
 def validate_folder_permission(user, folder_id):
     """Validate permissions for the folder."""
-    folder_obj = models.Folder.objects.filter(pk=folder_id)
-    if len(folder_obj) > 0:
-        return True if folder_obj[0].owner == user else False
+    folder_obj = models.File.objects.filter(pk=folder_id).exists()
+    if folder_obj:
+        folder_obj = models.File.objects.get(pk=folder_obj)
+        return True if folder_obj.owner == user else False
     return False
 
 
 def validate_parent_folder(parent_folder):
     """Validate parents folder exist."""
     if parent_folder is not None:
-        folders_list = models.Folder.objects.filter(pk=parent_folder)
-        return len(folders_list) > 0
+        folders_list = models.Folder.objects.filter(pk=parent_folder).exists()
+        return folders_list
     else:
         return True
 
@@ -97,23 +99,23 @@ def validate_exist_parent_folder(parent_folder, title, user):
     folders_list = models.Folder.objects.filter(
         parent=parent_folder,
         owner=user,
-        title=title)
-    return len(folders_list) > 0
+        title=title).exists()
+    return folders_list
 
 
 def validate_exist_folder_new_title(folder_id, new_title, user):
     """Validate new folder's title for rename."""
-    folder_obj = models.Folder.objects.filter(pk=folder_id)
-    if len(folder_obj) == 0:
+    folder_obj = models.Folder.objects.filter(pk=folder_id).exists()
+    if not folder_obj:
         return False
-    parent_folder_obj = folder_obj[0].parent
+    parent_folder_obj = models.Folder.objects.get(pk=folder_id)
     folders_list = models.Folder.objects.filter(parent=parent_folder_obj,
                                                 owner=user,
-                                                title=new_title)
-    return len(folders_list) > 0
+                                                title=new_title).exists()
+    return folders_list
 
 
-def validate_exist_current_folder(folder_id, title, user):
+def validate_exist_current_folder(folder_id):
     """Validate folder's exist."""
-    folders_list = models.Folder.objects.filter(pk=folder_id)
-    return len(folders_list) > 0
+    folders_list = models.Folder.objects.filter(pk=folder_id).exists()
+    return folders_list

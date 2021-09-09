@@ -2,8 +2,6 @@
 import os
 
 from django import http
-from django.contrib import auth
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -109,46 +107,6 @@ def user_upload_file(request):
                    'parent_folder': parent_folder}
         return render(request,
                       'assets/upload_file.html',
-                      context=context)
-    else:
-        return http.HttpResponseNotAllowed(['GET', 'POST'])
-
-
-def user_login(request):
-    """View for user login."""
-    if request.method == 'POST':
-        form = forms.UserLoginForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            auth.login(request, user)
-            return redirect('root_page')
-    else:
-        form = forms.UserLoginForm()
-    context = {'form': form}
-    return render(request, 'assets/login.html', context)
-
-
-def user_logout(request):
-    """View for user logout."""
-    auth.logout(request)
-    return redirect('login')
-
-
-def user_register(request):
-    """View for register."""
-    if request.method == 'POST':
-        form = forms.UserRegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Success!')
-            return redirect('root_page')
-        else:
-            messages.error(request, 'Error!')
-    elif request.method == 'GET':
-        form = forms.UserRegisterForm()
-        context = {'form': form}
-        return render(request,
-                      'assets/register.html',
                       context=context)
     else:
         return http.HttpResponseNotAllowed(['GET', 'POST'])
@@ -523,10 +481,8 @@ def rename_folder(request):
                 folder_id
             )
             folder_exist_status = validators.validate_exist_current_folder(
-                folder_id,
-                new_title,
-                request.user
-            )
+                folder_id)
+
             params_status = validators.validate_get_params(dict(request.GET))
             new_folder_exist = validators.validate_exist_folder_new_title(
                 folder_id,
