@@ -1,12 +1,11 @@
 """Any API methods with AWS S3."""
 
-import os
-
 import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 
 from assets import models
+from assets.db import queries
 
 
 def create_bucket():
@@ -18,52 +17,29 @@ def create_bucket():
     return boto3.resource('s3', **conf).Bucket(name=settings.S3_BUCKET)
 
 
-def create_path(user, parent_folder):
-    """Create full path for upload file."""
-    if parent_folder is None:
-        return user.username
-
-    path_objects = [parent_folder.title]
-    while parent_folder.parent is not None:
-        parent_folder = models.Folder.objects.get(pk=parent_folder.parent.pk)
-        path_objects.append(parent_folder.title)
-    path_objects.reverse()
-    full_path = os.path.join(user.username, *path_objects)
-    return full_path
-
-
-def get_url(user, file_id):
+def get_url(file_id):
     """Get url for download file."""
     file_obj = models.File.objects.get(pk=file_id)
-    full_path = create_path(user, file_obj.folder)
-    full_path = os.path.join(full_path, file_obj.title)
-    full_url = f'https://{settings.S3_BUCKET}.s3.amazonaws.com/{full_path}'
+    file_key = file_obj.relative_key
+    full_url = f'https://{settings.S3_BUCKET}.s3.amazonaws.com/{file_key}'
     return full_url
 
 
-def upload_file(file_name, user, parent_folder, object_name=None, ):
+def upload_file(file_name, user, key):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
-    if object_name is None:
-        object_name = os.path.basename(file_name)
-
-    new_path = create_path(user, parent_folder)
-
-    if not check_exist(bucket, object_name, new_path):
-        with open(file_name, 'rb') as file:
-
+    with open(file_name, 'rb') as file:
+        try:
             bucket.put_object(Body=file,
                               Bucket=bucket.name,
-                              Key=f'{new_path}/'
-                                  f'{object_name}',
+                              Key=key,
                               ACL='public-read')
-        if check_exist(bucket, object_name, new_path):
-            return True
-        else:
+
+        except ClientError:
             return False
-    else:
-        return False
+        else:
+            return True
 
 
 def check_exist(bucket, object_name, path):
@@ -73,19 +49,15 @@ def check_exist(bucket, object_name, path):
     return True if len(response) > 0 else False
 
 
-def delete_file(user, file_id):
+def delete_key(file_id):
     """Delete file from S3."""
     bucket = create_bucket()
     file_obj = models.File.objects.get(pk=file_id)
-    full_path = create_path(user, file_obj.folder)
+    key = file_obj.relative_key
     # TODO: Fix validation.
-    if not check_exist(bucket, file_obj.title, full_path):
-        return False
-    full_path = os.path.join(full_path, file_obj.title)
-
     delete_dict = {
         'Objects': [
-            {'Key': full_path}
+            {'Key': key}
         ]
     }
     response = bucket.delete_objects(Delete=delete_dict)
@@ -93,112 +65,21 @@ def delete_file(user, file_id):
     return True if status_code == 200 else False
 
 
-def delete_folders(user, folder_id):
+def delete_folders(folder_id):
     """Delete folder with files from S3."""
-    bucket = create_bucket()
-    folder_obj = models.Folder.objects.get(pk=folder_id)
-    full_path = create_path(user, folder_obj)
-    try:
-        bucket.objects.filter(Prefix=f'{full_path}').delete()
-    except ClientError:
-        return False
-    else:
-        return True
+    delete_recursive(folder_id)
 
 
-def move_file(user, new_folder, file_id):
-    """Copy file and delete old."""
-    bucket = create_bucket()
-    file_obj = models.File.objects.get(pk=file_id)
-    if new_folder is not None:
-        new_folder = models.Folder.objects.get(pk=new_folder)
-    new_full_path = create_path(user, new_folder)
-    old_full_path = create_path(user, file_obj.folder)
-    if not check_exist(bucket, file_obj, new_full_path):
-        bucket = create_bucket()
-        copy_source = {
-            'Bucket': f'{bucket.name}',
-            'Key': f'{old_full_path}/{file_obj.title}'
-        }
-        try:
-            bucket.copy(
-                copy_source,
-                f'{new_full_path}/{file_obj.title}',
-                ExtraArgs={'ACL': 'public-read'})
-            delete_file(user, file_id)
-        except ClientError:
-            return False
-        else:
-            return True
-    else:
-        return False
+def delete_recursive(folder_id):
+    """Find all children and delete them."""
+    folders = models.Folder.objects.filter(parent=folder_id).exists()
+    files = models.File.objects.filter(folder=folder_id)
 
+    for file in files:
+        delete_key(file.pk)
+        queries.delete_file(file.pk)
 
-def rename_file(user, file_id, new_title):
-    """Rename file. Copy with new key and delete old."""
-    bucket = create_bucket()
-    file_obj = models.File.objects.get(pk=file_id)
-    current_folder = file_obj.folder
-    full_path = create_path(user, current_folder)
-    if not check_exist(bucket, new_title, full_path):
-        bucket = create_bucket()
-        copy_source = {
-            'Bucket': f'{bucket.name}',
-            'Key': f'{full_path}/{file_obj.title}'
-        }
-        try:
-            bucket.copy(
-                copy_source,
-                f'{full_path}/{new_title}',
-                ExtraArgs={'ACL': 'public-read'})
-            delete_file(user, file_id)
-        except ClientError:
-            return False
-        else:
-            return True
-    else:
-        return False
-
-
-def rename_folder(user, folder_id, new_title):
-    """Rename folder. Copy all assets in new place and delete old."""
-    bucket = create_bucket()
-    folder_obj = models.Folder.objects.get(pk=folder_id)
-    full_path = create_path(user, folder_obj)
-    path_list = full_path.split('/')
-    path_list[-1] = new_title
-    new_path = '/'.join(path_list)
-
-    for obj in bucket.objects.filter(Prefix=full_path):
-        file_key = obj.key
-        if not file_key.endswith('/'):
-            bucket_key_path = file_key.split('/')
-            second_key_path = []
-            for row in bucket_key_path[::-1]:
-                if not row == folder_obj.title:
-                    second_key_path.append(row)
-                else:
-                    break
-            second_key_path.reverse()
-            second_key_path = '/'.join(second_key_path)
-            full_new_path = f'{new_path}/{second_key_path}'
-
-            copy_source = {
-                'Bucket': f'{bucket.name}',
-                'Key': file_key
-            }
-            try:
-                bucket.copy(
-                    copy_source,
-                    full_new_path,
-                    ExtraArgs={'ACL': 'public-read'})
-
-                delete_dict = {
-                    'Objects': [
-                        {'Key': file_key}
-                    ]
-                }
-                bucket.delete_objects(Delete=delete_dict)
-            except ClientError:
-                return False
-    return True
+    if folders:
+        for folder in folders:
+            delete_recursive(folder.pk)
+    models.Folder.objects.filter(pk=folder_id).delete()

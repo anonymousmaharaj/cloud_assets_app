@@ -78,9 +78,9 @@ def validate_file_permission(user, file_id):
 
 def validate_folder_permission(user, folder_id):
     """Validate permissions for the folder."""
-    folder_obj = models.File.objects.filter(pk=folder_id).exists()
+    folder_obj = models.Folder.objects.filter(pk=folder_id).exists()
     if folder_obj:
-        folder_obj = models.File.objects.get(pk=folder_obj)
+        folder_obj = models.Folder.objects.get(pk=folder_id)
         return True if folder_obj.owner == user else False
     return False
 

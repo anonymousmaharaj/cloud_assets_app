@@ -19,6 +19,7 @@ class File(models.Model):
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT)
+    relative_key = models.CharField(max_length=255)
 
     class Meta:
         """Metadata for File model."""

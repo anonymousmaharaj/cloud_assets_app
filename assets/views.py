@@ -1,5 +1,6 @@
 """Views for Assets application."""
-import os
+
+import uuid
 
 from django import http
 from django.contrib.auth.decorators import login_required
@@ -56,6 +57,7 @@ def user_upload_file(request):
                 parent_folder = None
 
             upload_path = request.POST.get('path')
+
             id_status = validators.validate_id_for_folder(parent_folder)
             validate_status = validators.validate_upload_file(upload_path)
             file_exist = validators.validate_exist_file_in_folder(
@@ -77,18 +79,17 @@ def user_upload_file(request):
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
-            parent_folder = models.Folder.objects.filter(
-                pk=parent_folder)
-
-            if len(parent_folder) < 1:
-                parent_folder = None
+            folder_exists = models.Folder.objects.filter(
+                pk=parent_folder).exists()
+            if folder_exists:
+                parent_folder = models.Folder.objects.get(pk=parent_folder)
             else:
-                parent_folder = parent_folder[0]
+                parent_folder = None
 
-            if s3.upload_file(upload_path, request.user, parent_folder):
-                models.File(title=os.path.basename(upload_path),
-                            owner=request.user,
-                            folder=parent_folder).save()
+            file_key = f'users/{request.user.pk}/assets/{str(uuid.uuid4())}'
+
+            if s3.upload_file(upload_path, request.user, file_key):
+                queries.create_file(upload_path, request.user, parent_folder, file_key)
                 return http.HttpResponse('Your file is uploaded.')
             else:
                 return http.HttpResponse(
@@ -222,7 +223,7 @@ def download_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        download_url = s3.get_url(request.user, file_id)
+        download_url = s3.get_url(file_id)
 
         return redirect(download_url)
     else:
@@ -267,8 +268,8 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        if s3.delete_file(request.user, file_id):
-            models.File.objects.get(pk=file_id).delete()
+        if s3.delete_key(request.user, file_id):
+            queries.delete_file(file_id)
             return redirect(request.META.get('HTTP_REFERER'))
         else:
             return http.HttpResponse('Cannot delete this file or this file'
@@ -311,11 +312,8 @@ def delete_folder(request):
                 template_name='assets/errors/400_error_page.html'
             ))
 
-        if s3.delete_folders(request.user, folder_id):
-            queries.delete_recursive(folder_id)
-            return redirect(request.META.get('HTTP_REFERER'))
-        else:
-            return http.HttpResponse('Cannot delete this folder.')
+        s3.delete_recursive(folder_id)
+        return redirect(request.META.get('HTTP_REFERER'))
 
     else:
         return http.HttpResponseNotAllowed(['GET'])
@@ -375,13 +373,8 @@ def move_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            if s3.move_file(request.user, new_folder_id, file_id):
-                queries.move_file(new_folder_id, file_id)
-                return redirect('root_page')
-            else:
-                return http.HttpResponse('Cannot move this folder. '
-                                         'Or this file already exist in '
-                                         'target directory.')
+            queries.move_file(new_folder_id, file_id)
+            return redirect('root_page')
 
     elif request.method == 'GET':
         form = forms.MoveFileForm(user=request.user)
@@ -434,12 +427,9 @@ def rename_file(request):
                         template_name='assets/errors/403_error_page.html'
                     ))
 
-            if s3.rename_file(request.user, file_id, new_title):
-                queries.rename_file(file_id, new_title)
-                return redirect('root_page')
-            else:
-                return http.HttpResponse('Cannot rename file. Check current directory '
-                                         'for same title.')
+            queries.rename_file(file_id, new_title)
+            return redirect('root_page')
+
         else:
             return http.HttpResponseBadRequest(
                 content=render(
@@ -510,12 +500,9 @@ def rename_folder(request):
                         template_name='assets/errors/403_error_page.html'
                     ))
 
-            if s3.rename_folder(request.user, folder_id, new_title):
-                queries.rename_folder(folder_id, new_title)
-                return redirect('root_page')
-            else:
-                return http.HttpResponse('Cannot rename file. Check current directory '
-                                         'for same title.')
+            queries.rename_folder(folder_id, new_title)
+            return redirect('root_page')
+
         else:
             return http.HttpResponseBadRequest(
                 content=render(
