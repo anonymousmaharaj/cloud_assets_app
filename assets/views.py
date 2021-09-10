@@ -267,7 +267,7 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        if s3.delete_key(request.user, file_id):
+        if s3.delete_key(file_id):
             queries.delete_file(file_id)
             return redirect(request.META.get('HTTP_REFERER'))
         else:
