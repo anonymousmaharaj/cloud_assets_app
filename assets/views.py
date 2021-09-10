@@ -88,7 +88,7 @@ def user_upload_file(request):
 
             file_key = f'users/{request.user.pk}/assets/{str(uuid.uuid4())}'
 
-            if s3.upload_file(upload_path, request.user, file_key):
+            if s3.upload_file(upload_path, file_key):
                 queries.create_file(upload_path, request.user, parent_folder, file_key)
                 return http.HttpResponse('Your file is uploaded.')
             else:
@@ -267,9 +267,15 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
+        file_obj = models.File.objects.get(pk=file_id)
+        folder_id = file_obj.folder_id if file_obj.folder_id else None
+
         if s3.delete_key(file_id):
             queries.delete_file(file_id)
-            return redirect(request.META.get('HTTP_REFERER'))
+            if folder_id is not None:
+                return redirect(f'/?folder={folder_id}')
+            else:
+                return redirect('root_page')
         else:
             return http.HttpResponse('Cannot delete this file or this file'
                                      'doesn`t exist')
@@ -311,8 +317,15 @@ def delete_folder(request):
                 template_name='assets/errors/400_error_page.html'
             ))
 
-        s3.delete_recursive(folder_id)
-        return redirect(request.META.get('HTTP_REFERER'))
+        folder_obj = models.Folder.objects.get(pk=folder_id)
+        parent_id = folder_obj.parent_id if folder_obj.parent_id else None
+
+        s3.delete_folders(folder_id)
+
+        if parent_id is not None:
+            return redirect(f'/?folder={parent_id}')
+        else:
+            return redirect('root_page')
 
     else:
         return http.HttpResponseNotAllowed(['GET'])
@@ -513,7 +526,7 @@ def rename_folder(request):
         form = forms.RenameFolderForm()
         context = {'form': form}
         return render(request,
-                      'assets/rename_file.html',
+                      'assets/rename_folder.html',
                       context=context)
     else:
         return http.HttpResponseNotAllowed(['GET', 'POST'])

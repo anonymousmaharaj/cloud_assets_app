@@ -25,7 +25,7 @@ def get_url(file_id):
     return full_url
 
 
-def upload_file(file_name, user, key):
+def upload_file(file_name, key):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
@@ -42,13 +42,6 @@ def upload_file(file_name, user, key):
             return True
 
 
-def check_exist(bucket, object_name, path):
-    """Check file's exist in current directory."""
-    response = list(bucket.objects.filter(
-        Prefix=f'{path}/{object_name}'))
-    return True if len(response) > 0 else False
-
-
 def delete_key(file_id):
     """Delete file from S3."""
     bucket = create_bucket()
@@ -60,9 +53,12 @@ def delete_key(file_id):
             {'Key': key}
         ]
     }
-    response = bucket.delete_objects(Delete=delete_dict)
-    status_code = response['ResponseMetadata']['HTTPStatusCode']
-    return True if status_code == 200 else False
+    try:
+        bucket.delete_objects(Delete=delete_dict)
+    except ClientError:
+        return False
+    else:
+        return True
 
 
 def delete_folders(folder_id):
@@ -80,6 +76,7 @@ def delete_recursive(folder_id):
         queries.delete_file(file.pk)
 
     if folders:
-        for folder in folders:
+        folders_qs = models.Folder.objects.filter(parent=folder_id)
+        for folder in folders_qs:
             delete_recursive(folder.pk)
     models.Folder.objects.filter(pk=folder_id).delete()

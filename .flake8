@@ -1,8 +1,10 @@
 [flake8]
-exclude = assets/migrations, authentication/migrations, static, venv, manage.py, settings.py
+ignore = S106, W504
+exclude = assets/migrations, authentication/migrations, static, venv, manage.py, settings.py, __init__.py
 application-import-names =
     assets,
     cloud_assets,
     common
 import-order-style = google
 max-line-length = 100
+
