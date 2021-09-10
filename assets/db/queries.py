@@ -84,3 +84,10 @@ def create_file(upload_path, user, folder, key):
 def delete_file(file_id):
     """Delete file form DB."""
     models.File.objects.get(pk=file_id).delete()
+
+
+def create_folder(user, title, parent_id):
+    """Create new folder in DB."""
+    models.Folder(title=title,
+                  owner=user,
+                  parent_id=parent_id).save()

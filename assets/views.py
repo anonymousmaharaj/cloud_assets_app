@@ -162,9 +162,8 @@ def create_folder(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            models.Folder(title=new_folder_title,
-                          owner=request.user,
-                          parent_id=parent_folder).save()
+            queries.create_folder(request.user, new_folder_title, parent_folder)
+
             # TODO: Make redirect to last page
             return redirect('root_page')
         else:
