@@ -4,6 +4,6 @@ from django.apps import AppConfig
 
 
 class AssetsConfig(AppConfig):
-    """Assets apps."""
+    """Assets app."""
 
     name = 'assets'

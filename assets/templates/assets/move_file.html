@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h3>Choice file for upload</h3>
-    <form method="post" enctype="multipart/form-data" >
+    <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Upload!</button>
+        <button type="submit">Move!</button>
     </form>
+
     <br>
     {% if parent_folder %}
         <a href="/?folder={{ parent_folder }}">Back</a>

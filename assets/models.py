@@ -12,13 +12,14 @@ class File(models.Model):
     Related with Folder.
     """
 
-    title = models.CharField(max_length=150)
+    title = models.CharField(max_length=255)
     folder = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
                                null=True,
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT)
+    relative_key = models.CharField(max_length=255)
 
     class Meta:
         """Metadata for File model."""
@@ -46,7 +47,7 @@ class Folder(models.Model):
     Self-linked. May contain other objects.
     """
 
-    title = models.CharField(max_length=150)
+    title = models.CharField(max_length=255)
     parent = models.ForeignKey('Folder',
                                on_delete=models.PROTECT,
                                null=True,
@@ -62,7 +63,6 @@ class Folder(models.Model):
                 name='assets_folder_title_parent_owner_key',
                 fields=['title', 'parent', 'owner'],
             ),
-
             models.UniqueConstraint(
                 name='assets_folder_title_owner_key',
                 fields=['title', 'owner'],
