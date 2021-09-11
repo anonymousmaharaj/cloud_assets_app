@@ -50,18 +50,25 @@ def user_upload_file(request):
     """
     # TODO: Add functionality to add to folder.
     if request.method == 'POST':
-        form = forms.UploadFileForm(request.POST)
+        form = forms.UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
             if parent_folder == '':
                 parent_folder = None
 
-            upload_path = request.POST.get('path')
+            uploaded_file = request.FILES.get('file', None)
+            if uploaded_file is None:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
+            file_name = uploaded_file.name
 
             id_status = validators.validate_id_for_folder(parent_folder)
-            validate_status = validators.validate_upload_file(upload_path)
             file_exist = validators.validate_exist_file_in_folder(
-                upload_path,
+                file_name,
                 user=request.user,
                 folder=parent_folder)
 
@@ -71,10 +78,6 @@ def user_upload_file(request):
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
-
-            if not validate_status:
-                return http.HttpResponse(
-                    f'No such file in directory {upload_path}')
 
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
@@ -88,8 +91,8 @@ def user_upload_file(request):
 
             file_key = f'users/{request.user.pk}/assets/{str(uuid.uuid4())}'
 
-            if s3.upload_file(upload_path, file_key):
-                queries.create_file(upload_path, request.user, parent_folder, file_key)
+            if s3.upload_file(uploaded_file.file, file_key):
+                queries.create_file(file_name, request.user, parent_folder, file_key)
                 return http.HttpResponse('Your file is uploaded.')
             else:
                 return http.HttpResponse(

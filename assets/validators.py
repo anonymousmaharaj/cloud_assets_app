@@ -1,18 +1,11 @@
 """Any validators for Assets app."""
 
-import os.path
-
 from assets import models
 
 
-def validate_upload_file(file_path):
-    """Validate file path for exist."""
-    return os.path.exists(file_path) and os.path.isfile(file_path)
-
-
-def validate_exist_file_in_folder(file_path, user, folder=None):
+def validate_exist_file_in_folder(file_name, user, folder=None):
     """Validate exists file in DB in folder."""
-    file_exist = models.File.objects.filter(title=os.path.basename(file_path),
+    file_exist = models.File.objects.filter(title=file_name,
                                             owner=user,
                                             folder=folder).exists()
     return file_exist

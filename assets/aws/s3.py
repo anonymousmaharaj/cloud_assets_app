@@ -29,17 +29,16 @@ def upload_file(file_name, key):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
-    with open(file_name, 'rb') as file:
-        try:
-            bucket.put_object(Body=file,
-                              Bucket=bucket.name,
-                              Key=key,
-                              ACL='public-read')
+    try:
+        bucket.put_object(Body=file_name,
+                          Bucket=bucket.name,
+                          Key=key,
+                          ACL='public-read')
 
-        except ClientError:
-            return False
-        else:
-            return True
+    except ClientError:
+        return False
+    else:
+        return True
 
 
 def delete_key(file_id):

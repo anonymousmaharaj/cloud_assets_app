@@ -37,7 +37,7 @@ class MoveFileForm(forms.Form):
 class UploadFileForm(forms.Form):
     """Form for input file's path."""
 
-    path = forms.CharField(label='Input path...')
+    file = forms.FileField()
 
 
 class CreateFolderForm(forms.Form):

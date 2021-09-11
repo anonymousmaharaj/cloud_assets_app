@@ -1,5 +1,4 @@
 """Queries and related objects."""
-import os
 
 from django.db import connection
 
@@ -73,9 +72,9 @@ def rename_folder(folder_id, new_title):
     folder_obj.save()
 
 
-def create_file(upload_path, user, folder, key):
+def create_file(file_name, user, folder, key):
     """Create file in DB."""
-    models.File(title=os.path.basename(upload_path),
+    models.File(title=file_name,
                 owner=user,
                 folder=folder,
                 relative_key=key).save()
