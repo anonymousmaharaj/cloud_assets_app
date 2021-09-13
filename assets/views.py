@@ -44,7 +44,6 @@ def show_page(request):
 @login_required(login_url='/login/')
 def user_upload_file(request):
     """Upload file to S3.
-
     Render form. Get file's path and upload it on S3.
     Create new object in File table.
     """
