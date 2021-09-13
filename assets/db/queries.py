@@ -51,10 +51,10 @@ def get_personal_folders(user):
     return models.Folder.objects.filter(owner=user)
 
 
-def move_file(new_folder_id, file_id):
+def move_file(new_folder, file_id):
     """Move file in DB."""
     file = models.File.objects.get(pk=file_id)
-    file.folder_id = new_folder_id
+    file.folder = new_folder
     file.save()
 
 

@@ -336,12 +336,13 @@ def delete_folder(request):
 @login_required(login_url='/login/')
 def move_file(request):
     """View for move file."""
+    """View for move file."""
     if request.method == 'POST':
         form = forms.MoveFileForm(request.POST, user=request.user)
         if form.is_valid():
-            new_folder_id = request.POST.get('new_folder', None)
+            new_folder = request.POST.get('new_folder', None)
 
-            if new_folder_id is None:
+            if new_folder is None:
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -350,11 +351,11 @@ def move_file(request):
 
             file_id = request.GET.get('file')
 
-            if new_folder_id == 'None':
-                new_folder_id = None
+            if new_folder == 'None':
+                new_folder = None
 
             file_status = validators.validate_file_id(file_id)
-            folder_exist_status = validators.validate_parent_folder(new_folder_id)
+            folder_exist_status = validators.validate_parent_folder(new_folder)
             file_permission_status = validators.validate_file_permission(
                 request.user,
                 file_id
@@ -362,10 +363,22 @@ def move_file(request):
             file_exist_status = validators.validate_exist_file(request.user, file_id)
             params_status = validators.validate_get_params(dict(request.GET))
 
-            if new_folder_id is not None:
+            if file_exist_status and folder_exist_status:
+                file = models.File.objects.get(pk=file_id)
+                if new_folder is not None:
+                    new_folder = models.Folder.objects.get(pk=new_folder)
+                file_name = file.title
+                file_exist_in_folder = validators.validate_exist_file_in_folder(
+                    file_name=file_name,
+                    user=request.user,
+                    folder=new_folder)
+                if file_exist_in_folder:
+                    return http.HttpResponse('File already exist in target directory')
+
+            if new_folder is not None:
                 folder_permission_status = validators.validate_folder_permission(
                     request.user,
-                    new_folder_id
+                    new_folder.pk
                 )
             else:
                 folder_permission_status = True
@@ -387,7 +400,7 @@ def move_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            queries.move_file(new_folder_id, file_id)
+            queries.move_file(new_folder, file_id)
             return redirect('root_page')
 
     elif request.method == 'GET':
@@ -441,6 +454,15 @@ def rename_file(request):
                         template_name='assets/errors/403_error_page.html'
                     ))
 
+            if file_exist_status:
+                file = models.File.objects.get(pk=file_id)
+                folder = file.folder
+                file_exist_in_folder = validators.validate_exist_file_in_folder(new_title,
+                                                                                request.user,
+                                                                                folder=folder)
+                if file_exist_in_folder:
+                    return http.HttpResponse('File already exists in folder. Change name.')
+
             queries.rename_file(file_id, new_title)
             return redirect('root_page')
 
@@ -488,6 +510,7 @@ def rename_folder(request):
                 folder_id)
 
             params_status = validators.validate_get_params(dict(request.GET))
+
             new_folder_exist = validators.validate_exist_folder_new_title(
                 folder_id,
                 new_title,

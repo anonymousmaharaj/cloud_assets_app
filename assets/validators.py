@@ -102,7 +102,7 @@ def validate_exist_folder_new_title(folder_id, new_title, user):
     if not folder_obj:
         return False
     parent_folder_obj = models.Folder.objects.get(pk=folder_id)
-    folders_list = models.Folder.objects.filter(parent=parent_folder_obj,
+    folders_list = models.Folder.objects.filter(parent=parent_folder_obj.parent,
                                                 owner=user,
                                                 title=new_title).exists()
     return folders_list
