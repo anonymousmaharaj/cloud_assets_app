@@ -48,7 +48,6 @@ def user_upload_file(request):
     Render form. Get file's path and upload it on S3.
     Create new object in File table.
     """
-    # TODO: Add functionality to add to folder.
     if request.method == 'POST':
         form = forms.UploadFileForm(request.POST, request.FILES)
         if form.is_valid():

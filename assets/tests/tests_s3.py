@@ -42,11 +42,11 @@ class TestS3Methods(TestCase):
     @patch('botocore.client.BaseClient._make_api_call')
     def test_upload_file(self, api_call, mock_bucket):
         """Test upload file func."""
-        temp_file = tempfile.NamedTemporaryFile()
-        mock_bucket.return_value = Mock()
-        api_call.return_value = True
-        response = s3.upload_file(temp_file.name, self.relative_key)
-        self.assertTrue(response)
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mock_bucket.return_value = Mock()
+            api_call.return_value = True
+            response = s3.upload_file(temp_file.name, self.relative_key)
+            self.assertTrue(response)
 
     @patch('assets.aws.s3.create_bucket')
     @patch('botocore.client.BaseClient._make_api_call')

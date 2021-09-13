@@ -3,8 +3,6 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from assets import forms
-
 
 class TestAuthApp(TestCase):
     """TestCase class for testing File model."""
@@ -26,13 +24,18 @@ class TestAuthApp(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'authentication/login.html')
 
-    def test_rename_folder_view_with_form(self):
+    def test_register(self):
         """Test move_file view's request with form."""
-        form_data = {
-            'new_folder': self.folder.pk
+        data = {
+            'username': 'new_register',
+            'email': 'newregistertest@test.com',
+            'password1': 'VeryStrongPSWDFo0Test!',
+            'password2': 'VeryStrongPSWDFo0Test!'
         }
-        form = forms.UserRegisterForm(data=form_data, user=self.user)
-        response = self.client.post(f'/move/?file={self.file.pk}', data=form_data,
+
+        response = self.client.post(reverse('register'), data=data,
                                     follow=True)
-        self.assertTrue(form.is_valid())
+        users = User.objects.all()
+
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(users.count(), 2)
