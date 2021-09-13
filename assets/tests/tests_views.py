@@ -1,8 +1,10 @@
 """Tests for views of Assets application."""
-
+import tempfile
+from unittest.mock import patch
 import uuid
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -52,7 +54,7 @@ class TestRootPageView(TestCase):
         """Test root page without authentication."""
         response = self.client.get(reverse('root_page'), follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'assets/login.html')
+        self.assertTemplateUsed(response, 'authentication/login.html')
 
 
 class TestUploadFileView(TestCase):
@@ -75,12 +77,19 @@ class TestUploadFileView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'assets/upload_file.html')
 
-    def test_upload_file_view_with_form(self):
+    @patch('assets.aws.s3.upload_file')
+    def test_upload_file_view_with_form(self, s3_api_call):
         """Test upload_file view's request with form."""
-        form_data = {
-            'path': 'test/test/test.txt',
-        }
-        form = forms.UploadFileForm(data=form_data)
+        s3_api_call.return_value = True
+
+        with tempfile.NamedTemporaryFile() as file:
+            file.write(b'test-payload')
+            file.seek(0)
+
+            form_data = {
+                'file': SimpleUploadedFile(file.name, file.read()),
+            }
+        form = forms.UploadFileForm(files=form_data)
         response = self.client.post('/upload_file/', data=form_data)
         self.assertTrue(form.is_valid())
         self.assertEqual(response.status_code, 200)
@@ -273,8 +282,10 @@ class TestDeleteFileView(TestCase):
             'file': self.file.pk
         }
 
-    def test_request_get(self):
+    @patch('assets.aws.s3.delete_key')
+    def test_request_get(self, s3_api_call):
         """Test move_file view's request with GET method."""
+        s3_api_call.return_value = True
         response = self.client.get(reverse('delete_file'), follow=True, data=self.get_params)
         self.assertEqual(response.status_code, 200)
 
