@@ -144,6 +144,7 @@ def create_folder(request):
                 new_folder_title)
             folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
+            parent_folder_exist_status = validators.validate_exist_current_folder(parent_folder)
             title_exist_status = validators.validate_exist_parent_folder(
                 parent_folder,
                 new_folder_title,
@@ -155,6 +156,7 @@ def create_folder(request):
                     'in target directory.')
 
             if (not id_status or
+                    not parent_folder_exist_status or
                     not params_status or
                     not name_status or
                     not folder_exist_status):

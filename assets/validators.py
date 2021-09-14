@@ -110,5 +110,8 @@ def validate_exist_folder_new_title(folder_id, new_title, user):
 
 def validate_exist_current_folder(folder_id):
     """Validate folder's exist."""
-    folders_list = models.Folder.objects.filter(pk=folder_id).exists()
-    return folders_list
+    if folder_id is not None:
+        folders_list = models.Folder.objects.filter(pk=folder_id).exists()
+        return folders_list
+    else:
+        return True
