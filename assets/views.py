@@ -52,6 +52,7 @@ def user_upload_file(request):
         form = forms.UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
+
             if parent_folder == '':
                 parent_folder = None
 
@@ -66,10 +67,6 @@ def user_upload_file(request):
             file_name = uploaded_file.name
 
             id_status = validators.validate_id_for_folder(parent_folder)
-            file_exist = validators.validate_exist_file_in_folder(
-                file_name,
-                user=request.user,
-                folder=parent_folder)
 
             if not id_status:
                 return http.HttpResponseBadRequest(
@@ -78,11 +75,17 @@ def user_upload_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
 
+            file_exist = validators.validate_exist_file_in_folder(
+                file_name,
+                user=request.user,
+                folder=parent_folder)
+
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
             folder_exists = models.Folder.objects.filter(
                 pk=parent_folder).exists()
+
             if folder_exists:
                 parent_folder = models.Folder.objects.get(pk=parent_folder)
             else:
@@ -202,6 +205,13 @@ def download_file(request):
         file_id = request.GET.get('file')
 
         validate_id_status = validators.validate_file_id(file_id)
+        if not validate_id_status:
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
+
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
             file_id
@@ -226,7 +236,7 @@ def download_file(request):
                     template_name='assets/errors/404_error_page.html'
                 ))
 
-        if not validate_id_status or not validate_params_status:
+        if not validate_params_status:
             return http.HttpResponseBadRequest(
                 content=render(
                     request=request,
@@ -247,6 +257,13 @@ def delete_file(request):
         file_id = request.GET.get('file')
 
         validate_id_status = validators.validate_file_id(file_id)
+        if not validate_id_status:
+            return http.HttpResponseBadRequest(
+                content=render(
+                    request=request,
+                    template_name='assets/errors/400_error_page.html'
+                ))
+
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
             file_id
@@ -271,7 +288,7 @@ def delete_file(request):
                     template_name='assets/errors/404_error_page.html'
                 ))
 
-        if not validate_id_status or not validate_params_status:
+        if not validate_params_status:
             return http.HttpResponseBadRequest(
                 content=render(
                     request=request,
@@ -301,6 +318,11 @@ def delete_folder(request):
     if request.method == 'GET':
         folder_id = request.GET.get('folder')
         id_status = validators.validate_id_for_folder(folder_id)
+        if not id_status:
+            return http.HttpResponseBadRequest(content=render(
+                request=request,
+                template_name='assets/errors/400_error_page.html'
+            ))
 
         params_status = validators.validate_get_params(
             dict(request.GET))
@@ -318,8 +340,7 @@ def delete_folder(request):
                     template_name='assets/errors/403_error_page.html'
                 ))
 
-        if (not id_status or
-                not params_status or
+        if (not params_status or
                 not folder_exist_status or
                 not params_status or
                 not folder_id_status):
@@ -542,9 +563,7 @@ def rename_folder(request):
             )
             folder_exist_status = validators.validate_exist_current_folder(
                 folder_id)
-
             params_status = validators.validate_get_params(dict(request.GET))
-
             new_folder_exist = validators.validate_exist_folder_new_title(
                 folder_id,
                 new_title,
