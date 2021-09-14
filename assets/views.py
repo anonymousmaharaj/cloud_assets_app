@@ -138,6 +138,14 @@ def create_folder(request):
 
             id_status = validators.validate_id_for_folder(
                 parent_folder)
+
+            if not id_status:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
             params_status = validators.validate_get_params(
                 dict(request.GET))
             name_status = validators.validate_new_name(
@@ -155,8 +163,7 @@ def create_folder(request):
                     'Folder with this title already exist '
                     'in target directory.')
 
-            if (not id_status or
-                    not parent_folder_exist_status or
+            if (not parent_folder_exist_status or
                     not params_status or
                     not name_status or
                     not folder_exist_status):
@@ -343,18 +350,26 @@ def move_file(request):
         form = forms.MoveFileForm(request.POST, user=request.user)
         if form.is_valid():
             new_folder = request.POST.get('new_folder', None)
+            file_id = request.GET.get('file', None)
 
-            if new_folder is None:
+            if (new_folder is None or
+                    file_id is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            file_id = request.GET.get('file')
-
             if new_folder == 'None':
                 new_folder = None
+            file_id_status = validators.validate_file_id(file_id)
+
+            if not file_id_status:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
 
             file_status = validators.validate_file_id(file_id)
             folder_exist_status = validators.validate_parent_folder(new_folder)
@@ -422,15 +437,24 @@ def rename_file(request):
         form = forms.RenameFileForm(request.POST)
         if form.is_valid():
             new_title = request.POST.get('new_title', None)
+            file_id = request.GET.get('file', None)
 
-            if new_title is None:
+            if (new_title is None or
+                    file_id is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            file_id = request.GET.get('file')
+            file_id_status = validators.validate_file_id(file_id)
+            if not file_id_status:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
             new_title = new_title.strip()
             file_status = validators.validate_file_id(file_id)
             file_permission_status = validators.validate_file_permission(
@@ -492,18 +516,26 @@ def rename_folder(request):
         form = forms.RenameFolderForm(request.POST)
         if form.is_valid():
             new_title = request.POST.get('new_title', None)
+            folder_id = request.GET.get('folder', None)
 
-            if new_title is None:
+            if (new_title is None or
+                    folder_id is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
 
-            folder_id = request.GET.get('folder')
             new_title = new_title.strip()
 
             folder_id_status = validators.validate_folder_id(folder_id)
+            if not folder_id_status:
+                return http.HttpResponseBadRequest(
+                    content=render(
+                        request=request,
+                        template_name='assets/errors/400_error_page.html'
+                    ))
+
             folder_permission_status = validators.validate_folder_permission(
                 request.user,
                 folder_id
@@ -523,8 +555,7 @@ def rename_folder(request):
                 return http.HttpResponse('Cannot rename folder. Check current directory '
                                          'for same title.')
 
-            if (not folder_id_status or
-                    not params_status or
+            if (not params_status or
                     not folder_exist_status):
                 return http.HttpResponseBadRequest(
                     content=render(
