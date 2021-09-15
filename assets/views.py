@@ -3,6 +3,7 @@
 import uuid
 
 from django import http
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -95,7 +96,11 @@ def user_upload_file(request):
 
             if s3.upload_file(uploaded_file.file, file_key):
                 queries.create_file(file_name, request.user, parent_folder, file_key)
-                return http.HttpResponse('Your file is uploaded.')
+                messages.success(request, 'The file was uploaded.')
+                if parent_folder is not None:
+                    return redirect(f'/?folder={parent_folder.pk}')
+                else:
+                    return redirect('root_page')
             else:
                 return http.HttpResponse(
                     'Your file already exist in target directory.'
@@ -177,9 +182,11 @@ def create_folder(request):
                     ))
 
             queries.create_folder(request.user, new_folder_title, parent_folder)
-
-            # TODO: Make redirect to last page
-            return redirect('root_page')
+            messages.success(request, 'The folder was created.')
+            if parent_folder is not None:
+                return redirect(f'/?folder={parent_folder}')
+            else:
+                return redirect('root_page')
         else:
             return http.HttpResponseBadRequest(
                 content=render(
@@ -300,6 +307,7 @@ def delete_file(request):
 
         if s3.delete_key(file_id):
             queries.delete_file(file_id)
+            messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:
                 return redirect(f'/?folder={folder_id}')
             else:
@@ -353,7 +361,7 @@ def delete_folder(request):
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
         s3.delete_folders(folder_id)
-
+        messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
             return redirect(f'/?folder={parent_id}')
         else:
@@ -437,9 +445,13 @@ def move_file(request):
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
-
+            old_folder = file.folder
             queries.move_file(new_folder, file_id)
-            return redirect('root_page')
+            messages.success(request, 'The file was successfully moved. ')
+            if old_folder is not None:
+                return redirect(f'/?folder={old_folder.pk}')
+            else:
+                return redirect('root_page')
 
     elif request.method == 'GET':
         form = forms.MoveFileForm(user=request.user)
@@ -511,7 +523,11 @@ def rename_file(request):
                     return http.HttpResponse('File already exists in folder. Change name.')
 
             queries.rename_file(file_id, new_title)
-            return redirect('root_page')
+            messages.success(request, 'The file was successfully renamed. ')
+            if folder is not None:
+                return redirect(f'/?folder={folder.pk}')
+            else:
+                return redirect('root_page')
 
         else:
             return http.HttpResponseBadRequest(
@@ -590,7 +606,11 @@ def rename_folder(request):
                     ))
 
             queries.rename_folder(folder_id, new_title)
-            return redirect('root_page')
+            messages.success(request, 'The folder was successfully renamed. ')
+            if folder_id is not None:
+                return redirect(f'/?folder={folder_id}')
+            else:
+                return redirect('root_page')
 
         else:
             return http.HttpResponseBadRequest(

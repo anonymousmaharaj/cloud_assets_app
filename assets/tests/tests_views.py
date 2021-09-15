@@ -90,7 +90,7 @@ class TestUploadFileView(TestCase):
                 'file': SimpleUploadedFile(file.name, file.read()),
             }
         form = forms.UploadFileForm(files=form_data)
-        response = self.client.post('/upload_file/', data=form_data)
+        response = self.client.post('/upload_file/', data=form_data, follow=True)
         self.assertTrue(form.is_valid())
         self.assertEqual(response.status_code, 200)
 
