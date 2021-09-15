@@ -3,7 +3,6 @@ import tempfile
 from unittest.mock import Mock, patch
 import uuid
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 
@@ -30,13 +29,6 @@ class TestS3Methods(TestCase):
         """Test create bucket func."""
         mock_create_bucket.return_value = Mock()
         s3.create_bucket()
-
-    def test_get_url(self):
-        """Test get url for download file func."""
-        bucket_name = settings.S3_BUCKET
-        url = s3.get_url(self.file.pk)
-        final_url = f'https://{bucket_name}.s3.amazonaws.com/{self.file.relative_key}'
-        self.assertEqual(url, final_url)
 
     @patch('assets.aws.s3.create_bucket')
     @patch('botocore.client.BaseClient._make_api_call')

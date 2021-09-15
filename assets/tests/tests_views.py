@@ -317,33 +317,3 @@ class TestDeleteFolderView(TestCase):
         """Test move_file view's request with GET method."""
         response = self.client.get(reverse('delete_folder'), follow=True, data=self.get_params)
         self.assertEqual(response.status_code, 200)
-
-
-class TestDownloadFileView(TestCase):
-    """Tests for download_file view."""
-
-    def setUp(self) -> None:
-        """Set default values for each test."""
-        self.user = User.objects.create_user(username='test_user',
-                                             password='test',
-                                             email='test@test.test')
-        self.credentials = {
-            'username': 'test_user',
-            'password': 'test'
-        }
-        self.client.login(**self.credentials)
-
-        self.file = models.File.objects.create(
-            title='test_file.txt',
-            owner=self.user,
-            folder=None,
-        )
-        self.get_params = {
-            'file': self.file.pk
-        }
-
-    def test_request_get(self):
-        """Test move_file view's request with GET method."""
-        response = self.client.get(reverse('download_file'), data=self.get_params)
-        self.assertRedirects(response, 'https://django-cloud-assets.s3.amazonaws.com/',
-                             fetch_redirect_response=False)
