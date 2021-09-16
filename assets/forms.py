@@ -9,13 +9,13 @@ from assets import models
 class RenameFolderForm(forms.Form):
     """Form for rename folder."""
 
-    new_title = forms.CharField(label='new_title')
+    new_title = forms.CharField(label='new_title', max_length=255)
 
 
 class RenameFileForm(forms.Form):
     """Form for rename file."""
 
-    new_title = forms.CharField(label='new_title')
+    new_title = forms.CharField(label='new_title', max_length=255)
 
 
 class MoveFileForm(forms.Form):

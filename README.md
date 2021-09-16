@@ -6,4 +6,6 @@ A cloud-based application for managing your Assets
 ##Tech
 - Python 3.8.11
 - PostgreSQL 12.8
-- AWS CLI
+- Django 3.0.14
+- Boto3 1.18.30
+- Django-environ 0.4.5

@@ -1,6 +1,7 @@
 """Any API methods with AWS S3."""
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from django.conf import settings
 
@@ -10,19 +11,32 @@ from assets.db import queries
 
 def create_bucket():
     """Create instance of Bucket."""
-    conf = {
+    credentials = {
         'aws_access_key_id': settings.AWS_KEY,
         'aws_secret_access_key': settings.AWS_SECRET_KEY
     }
-    return boto3.resource('s3', **conf).Bucket(name=settings.S3_BUCKET)
+    config = Config(signature_version=settings.AWS_SIGNATURE_VERSION,
+                    region_name=settings.AWS_REGION)
+
+    return boto3.resource('s3', **credentials, config=config).Bucket(
+        name=settings.S3_BUCKET)
 
 
 def get_url(file_id):
     """Get url for download file."""
+    bucket = create_bucket()
+
     file_obj = models.File.objects.get(pk=file_id)
     file_key = file_obj.relative_key
-    full_url = f'https://{settings.S3_BUCKET}.s3.amazonaws.com/{file_key}'
-    return full_url
+    params = {
+        'Bucket': bucket.name,
+        'Key': file_key,
+        'ResponseContentDisposition': f'attachment; filename = {file_obj.title}'
+    }
+    response = bucket.meta.client.generate_presigned_url('get_object',
+                                                         Params=params,
+                                                         ExpiresIn=3600)
+    return response
 
 
 def upload_file(file_name, key):
@@ -32,8 +46,7 @@ def upload_file(file_name, key):
     try:
         bucket.put_object(Body=file_name,
                           Bucket=bucket.name,
-                          Key=key,
-                          ACL='public-read')
+                          Key=key)
 
     except ClientError:
         return False
