@@ -28,11 +28,14 @@ def get_url(file_id):
 
     file_obj = models.File.objects.get(pk=file_id)
     file_key = file_obj.relative_key
+    params = {
+        'Bucket': bucket.name,
+        'Key': file_key,
+        'ResponseContentDisposition': f'attachment; filename = {file_obj.title}'
+    }
     response = bucket.meta.client.generate_presigned_url('get_object',
-                                                         Params={'Bucket': bucket.name,
-                                                                 'Key': file_key},
+                                                         Params=params,
                                                          ExpiresIn=3600)
-
     return response
 
 

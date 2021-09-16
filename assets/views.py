@@ -604,11 +604,11 @@ def rename_folder(request):
                         request=request,
                         template_name='assets/errors/403_error_page.html'
                     ))
-
+            current_folder = models.Folder.objects.get(pk=folder_id)
             queries.rename_folder(folder_id, new_title)
             messages.success(request, 'The folder was successfully renamed. ')
-            if folder_id is not None:
-                return redirect(f'/?folder={folder_id}')
+            if current_folder.parent is not None:
+                return redirect(f'/?folder={current_folder.parent.pk}')
             else:
                 return redirect('root_page')
 
