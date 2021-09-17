@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from assets import views
+from assets import views, views_v2
 
 # TODO: Fix upload_file path.
 urlpatterns = [
@@ -15,5 +15,5 @@ urlpatterns = [
     path('delete-folder/', views.delete_folder, name='delete_folder'),
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
-    path('rename-folder/', views.rename_folder, name='rename_folder')
+    path('folder/rename/<int:folder_id>/', views_v2.RenameFolderView.as_view())
 ]

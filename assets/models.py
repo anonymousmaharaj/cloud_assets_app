@@ -1,6 +1,7 @@
 """Models of assets app."""
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -77,3 +78,8 @@ class Folder(models.Model):
     def get_absolute_url(self):
         """Return absolute url of object."""
         return reverse('folder_page', kwargs={'folder_id': self.pk})
+
+    def full_clean(self, exclude=None, validate_unique=True):
+        """Check exist folder with same title."""
+        if Folder.objects.filter(title=self.title).first():
+            raise ValidationError('Current folder already exists.')
