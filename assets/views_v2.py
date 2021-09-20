@@ -87,13 +87,3 @@ class FolderUpdate(UpdateAPIView):
     queryset = models.Folder.objects.all()
     permission_classes = (permissions.IsFolderOwner,)
     serializer_class = serializers.UpdateFolderSerializer
-
-    def patch(self, request, *args, **kwargs):
-        folder = self.get_object()
-        self.check_object_permissions(request, folder)
-
-        serializer = serializers.UpdateFolderSerializer(folder, data=request.data)
-        if serializer.is_valid():
-            self.partial_update(request, *args, **kwargs)
-            return Response({'Success': True}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

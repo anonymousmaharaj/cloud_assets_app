@@ -1,5 +1,6 @@
 """All serializers."""
 
+from django.core import exceptions
 from rest_framework import serializers
 
 from assets import models
@@ -8,18 +9,17 @@ from assets import models
 class UpdateFolderSerializer(serializers.ModelSerializer):
     """Serializer for rename folder's title."""
 
+    id = serializers.ReadOnlyField(source='pk')
+
     class Meta:
         model = models.Folder
         fields = ('id', 'title')
 
-    def validate_title(self, title):
-        """Check the new folder title.
-
-        Return ValidationError if in parent folder already exists other folder with current title.
-        """
-        qs = models.Folder.objects.filter(parent=self.instance.parent,
-                                          title=title,
-                                          owner=self.instance.owner).exists()
-        if qs:
-            raise serializers.ValidationError('Already exists.')
-        return title
+    def update(self, instance, validated_data):
+        instance.title = validated_data['title']
+        try:
+            instance.clean()
+        except exceptions.ValidationError as error:
+            raise serializers.ValidationError(str(error))
+        instance.save()
+        return instance
