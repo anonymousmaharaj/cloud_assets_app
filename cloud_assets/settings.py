@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'assets.apps.AssetsConfig',
-    'authentication.apps.AuthConfig'
+    'authentication.apps.AuthConfig',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

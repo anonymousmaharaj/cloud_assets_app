@@ -5,8 +5,14 @@ from django import http, views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.shortcuts import redirect, render
+from rest_framework import status
+from rest_framework.generics import UpdateAPIView
+from rest_framework.response import Response
 
-from assets import forms, models
+from assets import forms
+from assets import models
+from assets import permissions
+from assets import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +79,21 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         except IntegrityError as e:
             logger.exception(f'[{request.user.username}] {str(e)} ')
         return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')
+
+
+class FolderUpdate(UpdateAPIView):
+    """View for rename folder's endpoint."""
+
+    queryset = models.Folder.objects.all()
+    permission_classes = (permissions.IsFolderOwner,)
+    serializer_class = serializers.UpdateFolderSerializer
+
+    def patch(self, request, *args, **kwargs):
+        folder = self.get_object()
+        self.check_object_permissions(request, folder)
+
+        serializer = serializers.UpdateFolderSerializer(folder, data=request.data)
+        if serializer.is_valid():
+            self.partial_update(request, *args, **kwargs)
+            return Response({'Success': True}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
