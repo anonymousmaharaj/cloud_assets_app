@@ -1,11 +1,14 @@
 """Views for assets app."""
+import logging
 
 from django import http, views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.shortcuts import redirect, render
 
 from assets import forms, models
+
+logger = logging.getLogger(__name__)
 
 
 class RenameFolderView(LoginRequiredMixin, views.View):
@@ -20,12 +23,23 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         @param folder_id: model.Folder primary key
         @return: HTTPResponse
         """
+        folder = models.Folder.objects.filter(pk=folder_id).first()
+        if not folder:
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
+            return http.HttpResponseNotFound(
+                content=render(request=request, template_name='assets/errors/404_error_page.html')
+            )
+        if not folder.owner == request.user:
+            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {folder_id} .')
+            return http.HttpResponseForbidden(
+                content=render(request=request, template_name='assets/errors/403_error_page.html')
+            )
+
         return render(
             request,
             'assets/rename_folder.html',
             context={'form': forms.RenameFolderForm(
-                instance=models.Folder.objects.filter(pk=folder_id).first())
-            }
+                instance=models.Folder.objects.filter(pk=folder_id).first())}
         )
 
     def post(self, request, folder_id: int):
@@ -35,38 +49,27 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         @param folder_id: model.Folder primary key
         @return: HTTPResponse
         """
+        #
         folder = models.Folder.objects.filter(pk=folder_id).first()
         if not folder:
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                )
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
+            return http.HttpResponseNotFound(
+                content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not folder.owner == request.user:
+            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {folder_id} .')
             return http.HttpResponseForbidden(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/403_error_page.html'
-                )
+                content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
+
         form = forms.RenameFolderForm(request.POST, instance=folder)
+
         if not form.is_valid():
-            return render(
-                request,
-                'assets/rename_folder.html',
-                context={'form': form}
-            )
+            logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
+            return render(request, 'assets/rename_folder.html', context={'form': form})
+
         try:
-            form.full_clean()
-        except ValidationError:
-            return render(
-                request,
-                'assets/rename_folder.html',
-                context={'form': form}
-            )
-        form.save()
-        if folder.parent is not None:
-            return redirect(f'/?folder={folder.parent.pk}')
-        else:
-            return redirect('root_page')
+            form.save()
+        except IntegrityError as e:
+            logger.exception(f'[{request.user.username}] {str(e)} ')
+        return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')

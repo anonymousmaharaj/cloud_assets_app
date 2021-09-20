@@ -24,14 +24,15 @@
                 <br>
             {% endif %}
         {% endif %}
+
         {% for row in rows %}
             {% if row.is_folder %}
                 <a href="/?folder={{ row.id }}">{{ row.title }}</a> | <a href="delete-folder/?folder={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
-                <a href="rename-folder/?folder={{ row.id }}">Rename</a><br>
+                <a href="assets/folder/{{ row.id }}/rename/">Rename</a><br>
             {% else %}
                 {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a>  |
                 <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
-                <a href="move/?file={{ row.id }}">Move</a> | <a href="folder/rename/{{ row.id }}">Rename</a><br>
+                <a href="move/?file={{ row.id }}">Move</a> | <a href="rename-file/?file={{ row.id }}">Rename</a><br>
             {% endif %}
         {% endfor %}
     </div>

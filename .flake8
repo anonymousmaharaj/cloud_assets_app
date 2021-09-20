@@ -6,5 +6,5 @@ application-import-names =
     cloud_assets,
     common
 import-order-style = google
-max-line-length = 100
+max-line-length = 120
 

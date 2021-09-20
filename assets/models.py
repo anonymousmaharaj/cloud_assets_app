@@ -79,7 +79,7 @@ class Folder(models.Model):
         """Return absolute url of object."""
         return reverse('folder_page', kwargs={'folder_id': self.pk})
 
-    def full_clean(self, exclude=None, validate_unique=True):
+    def clean(self):
         """Check exist folder with same title."""
-        if Folder.objects.filter(title=self.title).first():
+        if Folder.objects.filter(title=self.title, owner=self.owner, parent=self.parent).first():
             raise ValidationError('Current folder already exists.')

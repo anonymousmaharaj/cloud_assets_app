@@ -15,5 +15,5 @@ urlpatterns = [
     path('delete-folder/', views.delete_folder, name='delete_folder'),
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
-    path('folder/rename/<int:folder_id>/', views_v2.RenameFolderView.as_view())
+    path('assets/folder/<int:folder_id>/rename/', views_v2.RenameFolderView.as_view())
 ]
