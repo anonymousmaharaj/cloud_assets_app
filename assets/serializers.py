@@ -1,6 +1,5 @@
 """All serializers."""
-import uuid
-
+import bleach
 from django.core import exceptions
 from rest_framework import serializers
 
@@ -14,6 +13,9 @@ class UpdateFolderSerializer(serializers.ModelSerializer):
         model = models.Folder
         fields = ('id', 'title', 'parent')
         read_only_fields = ('id',)
+
+    def validate_title(self, data):
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def update(self, instance, validated_data):
         if validated_data.get('parent') is not None:
@@ -38,6 +40,9 @@ class UpdateFileSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'folder')
         read_only_fields = ('id',)
 
+    def validate_title(self, data):
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)
         instance.folder = validated_data.get('folder', instance.folder)
@@ -59,6 +64,9 @@ class ListCreateFileSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'folder')
         read_only_fields = ('id',)
 
+    def validate_title(self, data):
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+
     def create(self, validated_data):
         # TODO: add upload file (data)
         if models.File.objects.filter(title=validated_data.get('title'),
@@ -78,6 +86,9 @@ class ListCreateFolderSerializer(serializers.ModelSerializer):
         model = models.Folder
         fields = ('title', 'parent')
         read_only_fields = ('owner',)
+
+    def validate_title(self, data):
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def create(self, validated_data):
         if models.Folder.objects.filter(title=validated_data.get('title'),
