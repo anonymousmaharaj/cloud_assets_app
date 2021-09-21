@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'assets.apps.AssetsConfig',
     'authentication.apps.AuthConfig',
     'rest_framework',
+    'django_bleach',
 ]
 
 MIDDLEWARE = [
@@ -174,3 +175,15 @@ LOGGING = {
         }
     },
 }
+
+BLEACH_ALLOWED_TAGS = []
+
+BLEACH_ALLOWED_ATTRIBUTES = []
+
+BLEACH_ALLOWED_STYLES = []
+
+BLEACH_STRIP_TAGS = True
+
+BLEACH_STRIP_COMMENTS = True
+
+BLEACH_DEFAULT_WIDGET = 'django.forms.TextInput'

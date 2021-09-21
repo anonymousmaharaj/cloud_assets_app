@@ -1,12 +1,20 @@
 """Forms for Assets application."""
 
 from django import forms
+from django.conf import settings
+from django_bleach.forms import BleachField
 
 from assets import models
 
 
 class RenameFolderForm(forms.ModelForm):
     """Form for rename folder."""
+
+    title = BleachField(
+        allowed_tags=settings.BLEACH_ALLOWED_TAGS,
+        allowed_attributes=settings.BLEACH_ALLOWED_ATTRIBUTES,
+        strip=True
+    )
 
     class Meta:
         model = models.Folder
