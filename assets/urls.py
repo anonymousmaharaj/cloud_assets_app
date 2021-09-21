@@ -1,10 +1,18 @@
 """Endpoints for Assets application."""
 
-from django.urls import path
+from django.urls import path, include
 
 from assets import views, views_v2
 
 # TODO: Fix upload_file path.
+
+api_urlpatterns = [
+    path('assets/folders/', views_v2.FolderListCreate.as_view()),
+    path('assets/folder/<int:pk>', views_v2.FolderUpdate.as_view()),
+    path('assets/files/', views_v2.FileListCreate.as_view()),
+    path('assets/file/<int:pk>', views_v2.FileUpdate.as_view()),
+]
+
 urlpatterns = [
     path('api/health_check/', views.health_check),
     path('', views.show_page, name='root_page'),
@@ -16,5 +24,4 @@ urlpatterns = [
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
     path('assets/folder/<int:folder_id>/rename/', views_v2.RenameFolderView.as_view()),
-    path('api/assets/folder/<int:pk>', views_v2.FolderUpdate.as_view())
 ]

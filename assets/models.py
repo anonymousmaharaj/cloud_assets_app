@@ -41,6 +41,11 @@ class File(models.Model):
         """Return title when called."""
         return self.title
 
+    def clean(self):
+        """Check exist file with same title."""
+        if File.objects.filter(title=self.title, owner=self.owner, folder=self.folder).first():
+            raise ValidationError('Current file already exists.')
+
 
 class Folder(models.Model):
     """Type of user assets.
@@ -54,7 +59,8 @@ class Folder(models.Model):
                                null=True,
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
-                              on_delete=models.PROTECT)
+                              on_delete=models.PROTECT,
+                              related_name='folders')
 
     class Meta:
         """Metadata for Folder model."""
@@ -83,3 +89,5 @@ class Folder(models.Model):
         """Check exist folder with same title."""
         if Folder.objects.filter(title=self.title, owner=self.owner, parent=self.parent).first():
             raise ValidationError('Current folder already exists.')
+        if self == self.parent:
+            raise ValidationError('Cannot move folder in itself.')
