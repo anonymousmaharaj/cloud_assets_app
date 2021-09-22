@@ -6,8 +6,8 @@ from rest_framework import serializers
 from assets import models
 
 
-class UpdateFolderSerializer(serializers.ModelSerializer):
-    """Serializer for get and update methods."""
+class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for Get and Update methods."""
 
     class Meta:
         model = models.Folder
@@ -15,9 +15,11 @@ class UpdateFolderSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def update(self, instance, validated_data):
+        """Override this method to validate editable fields."""
         if validated_data.get('parent') is not None:
             if instance == validated_data.get('parent').parent:
                 raise serializers.ValidationError({'detail': 'Cannot move folder in this folder.'})
@@ -27,13 +29,13 @@ class UpdateFolderSerializer(serializers.ModelSerializer):
         try:
             instance.clean()
         except exceptions.ValidationError as error:
-            raise serializers.ValidationError({'detail': error.message})
+            raise serializers.ValidationError({'detail': str(error)})
         instance.save()
         return instance
 
 
-class UpdateFileSerializer(serializers.ModelSerializer):
-    """Serializer for get and update methods."""
+class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
+    """Serializer for Get, Update and Delete methods."""
 
     class Meta:
         model = models.File
@@ -41,23 +43,23 @@ class UpdateFileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def update(self, instance, validated_data):
+        """Override this method to validate editable fields."""
         instance.title = validated_data.get('title', instance.title)
         instance.folder = validated_data.get('folder', instance.folder)
         try:
             instance.clean()
         except exceptions.ValidationError as error:
-            raise serializers.ValidationError({'detail': error.message})
+            raise serializers.ValidationError({'detail': str(error)})
         instance.save()
         return instance
 
 
-class ListCreateFileSerializer(serializers.ModelSerializer):
-    """
-
-    """
+class FileListCreateSerializer(serializers.ModelSerializer):
+    """Serializer for List and Create methods."""
 
     class Meta:
         model = models.File
@@ -65,9 +67,11 @@ class ListCreateFileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def create(self, validated_data):
+        """Override this method to validate exist file."""
         # TODO: add upload file (data)
         if models.File.objects.filter(title=validated_data.get('title'),
                                       owner=validated_data.get('owner'),
@@ -77,10 +81,8 @@ class ListCreateFileSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ListCreateFolderSerializer(serializers.ModelSerializer):
-    """
-
-    """
+class FolderListCreateSerializer(serializers.ModelSerializer):
+    """Serializer for List and Create methods."""
 
     class Meta:
         model = models.Folder
@@ -88,9 +90,11 @@ class ListCreateFolderSerializer(serializers.ModelSerializer):
         read_only_fields = ('owner',)
 
     def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def create(self, validated_data):
+        """Override this method to validate exist folder."""
         if models.Folder.objects.filter(title=validated_data.get('title'),
                                         owner=validated_data.get('owner'),
                                         parent=validated_data.get('parent')).first():

@@ -1,8 +1,7 @@
 """Forms for Assets application."""
 
+import bleach
 from django import forms
-from django.conf import settings
-from django_bleach.forms import BleachField
 
 from assets import models
 
@@ -10,15 +9,13 @@ from assets import models
 class RenameFolderForm(forms.ModelForm):
     """Form for rename folder."""
 
-    title = BleachField(
-        allowed_tags=settings.BLEACH_ALLOWED_TAGS,
-        allowed_attributes=settings.BLEACH_ALLOWED_ATTRIBUTES,
-        strip=True
-    )
-
     class Meta:
         model = models.Folder
         fields = ['title']
+
+    def clean_title(self):
+        """Clean title field from any HTML tags."""
+        return bleach.clean(self.cleaned_data['title'], tags=[], strip=True, strip_comments=True)
 
 
 class RenameFileForm(forms.Form):

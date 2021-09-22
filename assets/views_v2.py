@@ -80,44 +80,50 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')
 
 
-class FolderUpdate(generics.RetrieveUpdateAPIView):
+class FolderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """View for rename folder's endpoint."""
 
     queryset = models.Folder.objects.all()
-    permission_classes = (permissions.IsOwner, permissions.IsParentOwner)
-    serializer_class = serializers.UpdateFolderSerializer
+    permission_classes = (permissions.IsObjectOwner, permissions.IsParentOwner)
+    serializer_class = serializers.FolderRetrieveUpdateSerializer
 
 
-class FolderListCreate(generics.ListCreateAPIView):
+class FolderListCreateView(generics.ListCreateAPIView):
+    """Generic APIView for List and Create folders."""
+
     queryset = models.Folder.objects.all()
     permission_classes = (permissions.IsParentOwner,)
-    serializer_class = serializers.ListCreateFolderSerializer
+    serializer_class = serializers.FolderListCreateSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return models.Folder.objects.filter(owner=user)
+        """Filter objects by user."""
+        return models.Folder.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
+        """Override this method to save additional fields."""
         serializer.save(owner=self.request.user)
 
 
-class FileUpdate(generics.RetrieveUpdateDestroyAPIView):
+class FileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """View for rename folder's endpoint."""
 
     queryset = models.File.objects.all()
-    permission_classes = (permissions.IsOwner, permissions.IsFolderOwner)
-    serializer_class = serializers.UpdateFileSerializer
+    permission_classes = (permissions.IsObjectOwner, permissions.IsFolderOwner)
+    serializer_class = serializers.FileRetrieveUpdateDestroySerializer
 
 
-class FileListCreate(generics.ListCreateAPIView):
+class FileListCreateView(generics.ListCreateAPIView):
+    """Generic APIView for List and Create files."""
+
     queryset = models.File.objects.all()
     permission_classes = (permissions.IsFolderOwner,)
-    serializer_class = serializers.ListCreateFileSerializer
+    serializer_class = serializers.FileListCreateSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        return models.File.objects.filter(owner=user)
+        """Filter objects by user."""
+        return models.File.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
+        """Override this method to save additional fields."""
         serializer.save(owner=self.request.user,
                         relative_key=f'users/{self.request.user.pk}/assets/{uuid.uuid4()}')
