@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'assets.apps.AssetsConfig',
-    'authentication.apps.AuthConfig'
+    'authentication.apps.AuthConfig',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +135,46 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_FILES_DIRS = [
     os.path.join(BASE_DIR, 'cloud_assets/static')
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'formatter': {
+            'format': '{asctime} [{levelname}] [{lineno}] [{module}] {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'assets_views': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.getenv('ASSETS_VIEW_LOG_FILE'),
+            'formatter': 'formatter',
+            'encoding': 'utf-8'
+        },
+        'requests': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.getenv('REQUESTS_LOG_FILE'),
+            'formatter': 'formatter',
+            'encoding': 'utf-8'
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['requests'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'assets': {
+            'handlers': ['assets_views'],
+            'level': 'WARNING',
+            'propagate': True,
+        }
+    },
+}
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler'
+}

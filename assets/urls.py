@@ -2,9 +2,17 @@
 
 from django.urls import path
 
-from assets import views
+from assets import views, views_v2
 
 # TODO: Fix upload_file path.
+
+api_urlpatterns = [
+    path('assets/folders/', views_v2.FolderListCreateView.as_view()),
+    path('assets/folders/<int:pk>/', views_v2.FolderRetrieveUpdateView.as_view()),
+    path('assets/files/', views_v2.FileListCreateView.as_view()),
+    path('assets/files/<int:pk>/', views_v2.FileRetrieveUpdateDestroyView.as_view()),
+]
+
 urlpatterns = [
     path('api/health_check/', views.health_check),
     path('', views.show_page, name='root_page'),
@@ -15,5 +23,5 @@ urlpatterns = [
     path('delete-folder/', views.delete_folder, name='delete_folder'),
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
-    path('rename-folder/', views.rename_folder, name='rename_folder')
+    path('assets/folder/<int:folder_id>/rename/', views_v2.RenameFolderView.as_view()),
 ]

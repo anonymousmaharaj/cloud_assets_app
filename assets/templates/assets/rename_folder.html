@@ -3,7 +3,7 @@
 {% block content %}
     <form method="post">
         {% csrf_token %}
-        <input name="new_title" type="text" required placeholder="Input new title...">
+        {{ form.as_p }}
         <button type="submit">Rename</button>
     </form>
     <br>

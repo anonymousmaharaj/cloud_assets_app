@@ -1,6 +1,7 @@
 """Models of assets app."""
-
+import uuid
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -40,6 +41,11 @@ class File(models.Model):
         """Return title when called."""
         return self.title
 
+    def clean(self):
+        """Check exist file with same title."""
+        if File.objects.filter(title=self.title, owner=self.owner, folder=self.folder).first():
+            raise ValidationError('Current file already exists.')
+
 
 class Folder(models.Model):
     """Type of user assets.
@@ -53,7 +59,9 @@ class Folder(models.Model):
                                null=True,
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
-                              on_delete=models.PROTECT)
+                              on_delete=models.PROTECT,
+                              related_name='folders')
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
 
     class Meta:
         """Metadata for Folder model."""
@@ -77,3 +85,10 @@ class Folder(models.Model):
     def get_absolute_url(self):
         """Return absolute url of object."""
         return reverse('folder_page', kwargs={'folder_id': self.pk})
+
+    def clean(self):
+        """Check exist folder with same title."""
+        if Folder.objects.filter(title=self.title, owner=self.owner, parent=self.parent).first():
+            raise ValidationError('Current folder already exists.')
+        if self == self.parent:
+            raise ValidationError('Cannot move folder in itself.')
