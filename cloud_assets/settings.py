@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'assets.apps.AssetsConfig',
     'authentication.apps.AuthConfig',
     'rest_framework',
-    'django_bleach',
 ]
 
 MIDDLEWARE = [
@@ -177,5 +176,5 @@ LOGGING = {
 }
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler',
 }

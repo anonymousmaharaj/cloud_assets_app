@@ -1,6 +1,6 @@
 [flake8]
 ignore = S106, W504, D106
-exclude = assets/migrations, authentication/migrations, static, venv, manage.py, settings.py, __init__.py
+exclude = assets/migrations, authentication/migrations, static, venv, manage.py, settings.py, __init__.py, assets/tests
 application-import-names =
     assets,
     cloud_assets,
