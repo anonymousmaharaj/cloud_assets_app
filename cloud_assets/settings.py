@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'assets.apps.AssetsConfig',
     'authentication.apps.AuthConfig',
     'rest_framework',
-    'django_bleach',
 ]
 
 MIDDLEWARE = [

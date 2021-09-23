@@ -12,6 +12,7 @@ from assets import forms
 from assets import models
 from assets import permissions
 from assets import serializers
+from assets.utils import create_file_relative_key
 
 logger = logging.getLogger(__name__)
 
@@ -125,5 +126,6 @@ class FileListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """Override this method to save additional fields."""
+        rk = create_file_relative_key(self.request.user.pk)
         serializer.save(owner=self.request.user,
-                        relative_key=f'users/{self.request.user.pk}/assets/{uuid.uuid4()}')
+                        relative_key=rk)
