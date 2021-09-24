@@ -1,15 +1,28 @@
-FROM python:3.8.10
+FROM python:3
 
-ENV PYTHONUNBUFFERED 1
+ENV TZ=UTC
+ENV DB_PASSWORD=Annonnymous_1488
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt update && apt -y upgrade
+RUN apt install python3-pip python3-dev libpq-dev postgresql postgresql-contrib postgresql-client nginx curl gunicorn -y
+
+USER postgres
+
+RUN /etc/init.d/postgresql start &&\
+    psql --command "CREATE DATABASE cloud_assets;"
+
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt .
-COPY entrypoint.sh .
-
-RUN pip install -r requirements.txt
-CMD chmod +x entrypoint.sh
-
 COPY . .
+RUN pip3 install -r requirements.txt
+
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d
+
+COPY entrypoint.sh /docker-entrypoint.d
+
+EXPOSE 8000
 
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+

@@ -1,6 +1,8 @@
 #! /bin/bash
 
-python3.8 manage.py makemigrations --no-input
+/etc/init.d/postgresql start
+
+python3 manage.py makemigrations --no-input
 
 python3 manage.py migrate --no-input
 
