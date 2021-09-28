@@ -17,24 +17,24 @@ import environ
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-env = environ.Env()
-environ.Env.read_env()
+# env = environ.Env()
+# environ.Env.read_env()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.str('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-AWS_KEY = env.str('AWS_KEY')
-AWS_SECRET_KEY = env.str('AWS_SECRET_KEY')
-AWS_REGION = env.str('AWS_REGION')
-AWS_SIGNATURE_VERSION = env.str('AWS_SIGNATURE_VERSION')
+AWS_KEY = os.getenv('AWS_KEY')
+AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
+AWS_REGION = os.getenv('AWS_REGION')
+AWS_SIGNATURE_VERSION = os.getenv('AWS_SIGNATURE_VERSION')
 
-S3_BUCKET = env.str('S3_BUCKET')
+S3_BUCKET = os.getenv('S3_BUCKET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG')
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 
@@ -88,9 +88,12 @@ WSGI_APPLICATION = 'cloud_assets.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': "cloud_assets",
-        'USER': "postgres",
-        'PASSWORD': "postgres",
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT")
+
     }
 }
 
