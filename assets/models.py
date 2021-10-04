@@ -1,5 +1,5 @@
 """Models of assets app."""
-
+import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -61,6 +61,7 @@ class Folder(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT,
                               related_name='folders')
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
 
     class Meta:
         """Metadata for Folder model."""
