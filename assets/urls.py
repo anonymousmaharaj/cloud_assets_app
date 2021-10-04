@@ -24,4 +24,11 @@ urlpatterns = [
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
     path('assets/folder/<int:folder_id>/rename/', views_v2.RenameFolderView.as_view()),
+    path('assets/files/<int:file_id>/share/', views_v2.CreateShareView.as_view()),
+    path('assets/files/shared/', views_v2.ListShareView.as_view(), name='share-list'),
+    path('assets/files/shared/<int:share_id>/update/', views_v2.UpdateShareView.as_view()),
+    path('assets/files/shared/<int:share_id>/delete/', views_v2.DeleteShareView.as_view()),
+    path('assets/files/<int:file_id>/share/download/', views_v2.DownloadShareFileView.as_view()),
+    path('assets/files/<int:file_id>/share/rename/', views_v2.RenameShareFileView.as_view()),
+    path('assets/files/<int:file_id>/share/delete/', views_v2.DeleteShareFileView.as_view()),
 ]

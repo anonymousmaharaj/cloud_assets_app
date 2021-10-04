@@ -19,8 +19,11 @@ class File(models.Model):
                                null=True,
                                blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
-                              on_delete=models.PROTECT)
+                              on_delete=models.PROTECT,
+                              related_name='files')
     relative_key = models.CharField(max_length=255)
+    shared = models.ManyToManyField(settings.AUTH_USER_MODEL,
+                                    through="SharedTable")
 
     class Meta:
         """Metadata for File model."""
@@ -92,3 +95,32 @@ class Folder(models.Model):
             raise ValidationError('Current folder already exists.')
         if self == self.parent:
             raise ValidationError('Cannot move folder in itself.')
+
+
+class Permissions(models.Model):
+    title = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.title
+
+
+class SharedTable(models.Model):
+    file = models.ForeignKey(File, on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='shared_files')
+    permissions = models.ManyToManyField(Permissions)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expired = models.DateTimeField()
+
+    class Meta:
+        """Metadata for model."""
+
+        constraints = [
+            models.UniqueConstraint(
+                name='shared_file_user_key',
+                fields=['file', 'user'],
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.file.title) + ' ' + str(self.user)

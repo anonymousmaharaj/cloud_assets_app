@@ -3,6 +3,7 @@
 import uuid
 
 from django import http
+from django.db.models import F
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -38,7 +39,9 @@ def show_page(request):
                                    pk=folder_id) if folder_id else None
 
     rows = queries.get_assets_list(folder_id, request.user.pk)
-    context = {'rows': rows, 'folder_obj': folder_obj}
+    shared_rows = models.SharedTable.objects.filter(user=request.user,
+                                                    created_at__lt=F('expired'))
+    context = {'rows': rows, 'folder_obj': folder_obj, 'shared_rows': shared_rows}
     return render(request, 'assets/root_page.html', context)
 
 

@@ -13,27 +13,51 @@
 {% endblock %}
 {% block content %}
     <a href="upload_file/?folder={{ folder_obj.pk }}">Upload File in current directory</a> |
-    <a href="create-folder/?folder={{ folder_obj.pk }}">Create new folder</a>
+    <a href="create-folder/?folder={{ folder_obj.pk }}">Create new folder</a> |
+    <a href="assets/files/shared">Check my shares</a>
     <hr>
     <div>
-        {% if folder_obj %}
-            {% if folder_obj.parent_id is None %}
-                <a href="{% url 'root_page' %}">..</a><br>
-            {% else %}
-                <a href="?folder={{ folder_obj.parent_id }}">..</a>
-                <br>
-            {% endif %}
+    {% if folder_obj %}
+        {% if folder_obj.parent_id is None %}
+            <a href="{% url 'root_page' %}">..</a><br>
+        {% else %}
+            <a href="?folder={{ folder_obj.parent_id }}">..</a>
+            <br>
         {% endif %}
+    {% endif %}
 
-        {% for row in rows %}
-            {% if row.is_folder %}
-                <a href="/?folder={{ row.id }}">{{ row.title }}</a> | <a href="delete-folder/?folder={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
-                <a href="assets/folder/{{ row.id }}/rename/">Rename</a><br>
-            {% else %}
-                {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a>  |
-                <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
-                <a href="move/?file={{ row.id }}">Move</a> | <a href="rename-file/?file={{ row.id }}">Rename</a><br>
-            {% endif %}
+    {% for row in rows %}
+        {% if row.is_folder %}
+            <a href="/?folder={{ row.id }}">{{ row.title }}</a> |
+            <a href="delete-folder/?folder={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
+            <a href="assets/folder/{{ row.id }}/rename/">Rename</a><br>
+        {% else %}
+            {{ row.title }} | <a href="download/?file={{ row.id }}">Download</a>  |
+            <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'>Delete</a> |
+            <a href="move/?file={{ row.id }}">Move</a> | <a href="rename-file/?file={{ row.id }}">Rename</a>
+            | <a href="assets/files/{{ row.id }}/share/">Share</a><br>
+        {% endif %}
+    {% endfor %}
+    <hr>
+    {% if shared_rows %}
+        Shared files: <br> <br>
+        {% for shared_row in shared_rows %}
+            {{ shared_row.file.title }}
+            {% for permission in shared_row.permissions.all %}
+                {% if permission.name == 'read_only' %}
+                    | <a href="/assets/files/{{ shared_row.file.pk }}/share/download/">{{ permission }}</a>
+                {% elif permission.name == 'rename_only' %}
+                    | <a href="/assets/files/{{ shared_row.file.pk }}/share/rename/">{{ permission }}</a>
+                {% elif permission.name == 'delete_only' %}
+                    | <a href="/assets/files/{{ shared_row.file.pk }}/share/delete/"
+                    onclick='return confirm("Are you sure?")'>{{ permission }}</a>
+                {% endif %}
+
+            {% endfor %}
+
+            <br>
         {% endfor %}
+
+    {% endif %}
     </div>
 {% endblock %}
