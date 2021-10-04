@@ -176,5 +176,5 @@ LOGGING = {
 }
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler',
 }

@@ -144,26 +144,12 @@ class TestRenameFolderView(TestCase):
             owner=self.user,
             parent=None,
         )
-        self.get_params = {
-            'folder': self.folder.pk
-        }
 
     def test_request_get(self):
         """Test rename_folder view's request with GET method."""
-        response = self.client.get(reverse('rename_folder'), follow=True, data=self.get_params)
+        response = self.client.get(f'/assets/folder/{self.folder.pk}/rename/', follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'assets/rename_folder.html')
-
-    def test_rename_folder_view_with_form(self):
-        """Test rename_folder view's request with form."""
-        form_data = {
-            'new_title': 'test',
-        }
-        form = forms.RenameFolderForm(data=form_data)
-        response = self.client.post(f'/rename-folder/?folder={self.folder.pk}', data=form_data,
-                                    follow=True)
-        self.assertTrue(form.is_valid())
-        self.assertEqual(response.status_code, 200)
 
 
 class TestRenameFileView(TestCase):
@@ -246,7 +232,7 @@ class TestMoveFileView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'assets/move_file.html')
 
-    def test_rename_folder_view_with_form(self):
+    def test_move_view_with_form(self):
         """Test move_file view's request with form."""
         form_data = {
             'new_folder': self.folder.pk

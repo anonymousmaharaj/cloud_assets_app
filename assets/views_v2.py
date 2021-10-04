@@ -7,6 +7,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.shortcuts import redirect, render
 from rest_framework import generics
+from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated
 
 from assets import forms
 from assets import models
@@ -78,6 +80,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
             form.save()
         except IntegrityError as e:
             logger.exception(f'[{request.user.username}] {str(e)} ')
+
         return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')
 
 
@@ -85,7 +88,7 @@ class FolderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """View for rename folder's endpoint."""
 
     queryset = models.Folder.objects.all()
-    permission_classes = (permissions.IsObjectOwner, permissions.IsParentOwner)
+    permission_classes = (permissions.IsObjectOwner, permissions.IsParentOwner, IsAuthenticated)
     serializer_class = serializers.FolderRetrieveUpdateSerializer
 
 
@@ -93,8 +96,9 @@ class FolderListCreateView(generics.ListCreateAPIView):
     """Generic APIView for List and Create folders."""
 
     queryset = models.Folder.objects.all()
-    permission_classes = (permissions.IsParentOwner,)
+    permission_classes = (permissions.IsParentOwner, IsAuthenticated)
     serializer_class = serializers.FolderListCreateSerializer
+    parser_classes = (JSONParser,)
 
     def get_queryset(self):
         """Filter objects by user."""
@@ -109,7 +113,7 @@ class FileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """View for rename folder's endpoint."""
 
     queryset = models.File.objects.all()
-    permission_classes = (permissions.IsObjectOwner, permissions.IsFolderOwner)
+    permission_classes = (permissions.IsObjectOwner, permissions.IsFolderOwner, IsAuthenticated)
     serializer_class = serializers.FileRetrieveUpdateDestroySerializer
 
 
@@ -117,7 +121,7 @@ class FileListCreateView(generics.ListCreateAPIView):
     """Generic APIView for List and Create files."""
 
     queryset = models.File.objects.all()
-    permission_classes = (permissions.IsFolderOwner,)
+    permission_classes = (permissions.IsFolderOwner, IsAuthenticated)
     serializer_class = serializers.FileListCreateSerializer
 
     def get_queryset(self):
