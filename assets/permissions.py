@@ -27,3 +27,17 @@ class IsObjectOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """Check if a object is owned by a user."""
         return obj.owner == request.user
+
+
+class IsShareOwner(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        """Check if a share is owned by a user."""
+        return obj.owner == request.user
+
+
+class IsShareFileOwner(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.data.get('file') in [file.pk for file in request.user.files.all()]:
+            return True
+

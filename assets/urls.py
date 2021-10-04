@@ -11,6 +11,7 @@ api_urlpatterns = [
     path('assets/folders/<int:pk>/', views_v2.FolderRetrieveUpdateView.as_view()),
     path('assets/files/', views_v2.FileListCreateView.as_view()),
     path('assets/files/<int:pk>/', views_v2.FileRetrieveUpdateDestroyView.as_view()),
+    path('assets/files/share', views_v2.ShareFileListCreateView.as_view()),
 ]
 
 urlpatterns = [

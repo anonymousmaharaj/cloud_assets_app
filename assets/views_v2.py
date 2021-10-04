@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.db.models import F
 from django.shortcuts import redirect, render, get_object_or_404
 from rest_framework import generics
 from rest_framework.parsers import JSONParser
@@ -338,3 +339,17 @@ class FileListCreateView(generics.ListCreateAPIView):
         rk = create_file_relative_key(self.request.user.pk)
         serializer.save(owner=self.request.user,
                         relative_key=rk)
+
+
+class ShareFileListCreateView(generics.ListCreateAPIView):
+    queryset = models.SharedTable.objects.all()
+    permission_classes = (permissions.IsShareOwner, permissions.IsShareFileOwner, IsAuthenticated)
+    serializer_class = serializers.ShareListCreateSerializer
+
+    def get_queryset(self):
+        """Filter objects by user."""
+
+        return models.SharedTable.objects.filter(
+            file_id__in=[file.id for file in self.request.user.files.all()],
+            created_at__lt=F('expired')
+        )
