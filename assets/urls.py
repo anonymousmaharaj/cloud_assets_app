@@ -7,7 +7,7 @@ from assets import views, views_v2
 # TODO: Fix upload_file path.
 
 api_urlpatterns = [
-    path('assets/folders/', views_v2.FolderListCreateView.as_view()),
+    path('assets/folders/', views_v2.FolderListCreateView.as_view(), name='assets-api-folders'),
     path('assets/folders/<int:pk>/', views_v2.FolderRetrieveUpdateView.as_view()),
     path('assets/files/', views_v2.FileListCreateView.as_view()),
     path('assets/files/<int:pk>/', views_v2.FileRetrieveUpdateDestroyView.as_view()),
