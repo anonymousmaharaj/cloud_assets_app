@@ -3,8 +3,8 @@
 {% block content %}
     <br>
     {% for row in rows %}
-        <b>{{ row.file.title }} | {{ row.user }} | {{ row.expired }}</b>| <a href="/assets/files/shared/{{ row.pk }}/update/">Change</a> |
-        <a href="/assets/files/shared/{{ row.id }}/delete/"
+        <b>{{ row.file.title }} | {{ row.user }} | {{ row.expired }}</b>| <a href="/assets/files/share/{{ row.pk }}/update/">Change</a> |
+        <a href="/assets/files/share/{{ row.id }}/delete/"
         onclick='return confirm("Are you sure?")'>Delete Share</a><br>
         <ul>
         {% for permission in row.permissions.all %}

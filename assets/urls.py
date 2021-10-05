@@ -11,7 +11,9 @@ api_urlpatterns = [
     path('assets/folders/<int:pk>/', views_v2.FolderRetrieveUpdateView.as_view()),
     path('assets/files/', views_v2.FileListCreateView.as_view()),
     path('assets/files/<int:pk>/', views_v2.FileRetrieveUpdateDestroyView.as_view()),
-    path('assets/files/share', views_v2.ShareFileListCreateView.as_view()),
+    path('assets/files/share/', views_v2.ShareListCreateView.as_view(), name='assets-share-list'),
+    path('assets/files/share/<int:pk>/', views_v2.ShareRetrieveUpdateDestroyView.as_view(), name='assets-share'),
+    path('assets/files/<int:pk>/share/', views_v2.SharedFileRetrieveUpdateDestroyView.as_view(), name='assets-share-file'),
 ]
 
 urlpatterns = [
@@ -26,9 +28,9 @@ urlpatterns = [
     path('rename-file/', views.rename_file, name='rename_file'),
     path('assets/folder/<int:folder_id>/rename/', views_v2.RenameFolderView.as_view()),
     path('assets/files/<int:file_id>/share/', views_v2.CreateShareView.as_view()),
-    path('assets/files/shared/', views_v2.ListShareView.as_view(), name='share-list'),
-    path('assets/files/shared/<int:share_id>/update/', views_v2.UpdateShareView.as_view()),
-    path('assets/files/shared/<int:share_id>/delete/', views_v2.DeleteShareView.as_view()),
+    path('assets/files/share/', views_v2.ListShareView.as_view(), name='share-list'),
+    path('assets/files/share/<int:share_id>/update/', views_v2.UpdateShareView.as_view()),
+    path('assets/files/share/<int:share_id>/delete/', views_v2.DeleteShareView.as_view()),
     path('assets/files/<int:file_id>/share/download/', views_v2.DownloadShareFileView.as_view()),
     path('assets/files/<int:file_id>/share/rename/', views_v2.RenameShareFileView.as_view()),
     path('assets/files/<int:file_id>/share/delete/', views_v2.DeleteShareFileView.as_view()),

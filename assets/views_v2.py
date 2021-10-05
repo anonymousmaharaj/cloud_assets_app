@@ -9,8 +9,13 @@ from django.db import IntegrityError
 from django.db.models import F
 from django.shortcuts import redirect, render, get_object_or_404
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from assets import forms
 from assets import models
@@ -55,6 +60,7 @@ class UpdateShareView(LoginRequiredMixin, views.View):
             logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
             return render(request, 'assets/share_file.html', context={'form': form})
 
+        form.save()
         messages.success(request, 'This share was updated successfully.')
         return redirect('share-list')
 
@@ -341,9 +347,9 @@ class FileListCreateView(generics.ListCreateAPIView):
                         relative_key=rk)
 
 
-class ShareFileListCreateView(generics.ListCreateAPIView):
+class ShareListCreateView(generics.ListCreateAPIView):
     queryset = models.SharedTable.objects.all()
-    permission_classes = (permissions.IsShareOwner, permissions.IsShareFileOwner, IsAuthenticated)
+    permission_classes = (permissions.IsShareOwner, permissions.IsSharingFileOwner, IsAuthenticated)
     serializer_class = serializers.ShareListCreateSerializer
 
     def get_queryset(self):
@@ -353,3 +359,61 @@ class ShareFileListCreateView(generics.ListCreateAPIView):
             file_id__in=[file.id for file in self.request.user.files.all()],
             created_at__lt=F('expired')
         )
+
+
+class ShareRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """View for rename folder's endpoint."""
+
+    queryset = models.SharedTable.objects.all()
+    permission_classes = (permissions.IsShareOwner, IsAuthenticated)
+    serializer_class = serializers.ShareRetrieveUpdateDestroySerializer
+
+    def get_queryset(self):
+        """Filter objects by user."""
+
+        return models.SharedTable.objects.filter(
+            file_id__in=[file.id for file in self.request.user.files.all()],
+            created_at__lt=F('expired')
+        )
+
+
+class SharedFileRetrieveUpdateDestroyView(APIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        if not models.SharedTable.objects.filter(
+                file_id=pk,
+                user=request.user.pk,
+                permissions__name='read_only').exists():
+            raise PermissionDenied(detail='forbidden')
+
+        return Response({'url': s3.get_url(pk)})
+
+    def put(self, request, pk):
+        if not models.SharedTable.objects.filter(
+                file_id=pk,
+                user=request.user.pk,
+                permissions__name='rename_only').exists():
+            raise PermissionDenied(detail='forbidden')
+
+        data = {'title': request.data.get('title')}
+        instance = models.File.objects.get(pk=pk)
+        serializer = serializers.ShareFileUpdateSerializer(instance=instance,
+                                                           partial=True,
+                                                           data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return Response({'title': instance.title})
+
+    def delete(self, request, pk):
+        if not models.SharedTable.objects.filter(
+                file_id=pk,
+                user=request.user.pk,
+                permissions__name='delete_only').exists():
+            raise PermissionDenied(detail='forbidden')
+
+        models.SharedTable.objects.filter(file_id=pk, user=request.user).first().delete()
+        models.File.objects.get(pk=pk).delete()
+
+        return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)

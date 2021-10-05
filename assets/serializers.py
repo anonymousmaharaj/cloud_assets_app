@@ -2,6 +2,7 @@
 import bleach
 from django.core import exceptions
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import serializers
 
 from assets import models
@@ -117,6 +118,11 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': 'User is not exists.'})
         if self.context['request'].user == User.objects.filter(email=data).first():
             raise serializers.ValidationError({'detail': 'Cannot share with yourself.'})
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+
+    def validate_expired(self, data):
+        if data < timezone.now():
+            raise serializers.ValidationError('Cannot be less then now.')
         return data
 
     def create(self, validated_data):
@@ -134,4 +140,31 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         instance.permissions.set(validated_data.get('permissions'))
         instance.save()
 
+        return instance
+
+
+class ShareRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SharedTable
+        fields = ('id', 'expired', 'user', 'file', 'permissions',)
+        read_only_fields = ('id', 'user', 'file')
+
+    def validate_expired(self, data):
+        if data < timezone.now():
+            raise serializers.ValidationError({'detail': 'Cannot be less then now.'})
+        return data
+
+
+class ShareFileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.File
+        fields = ('id', 'title',)
+        read_only_fields = ('id',)
+
+    def validate_title(self, data):
+        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.save()
         return instance
