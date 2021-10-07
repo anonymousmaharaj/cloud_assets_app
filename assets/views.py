@@ -102,8 +102,14 @@ def user_upload_file(request):
                               file_key,
                               os.path.splitext(uploaded_file.name)[1],
                               uploaded_file.content_type):
-                queries.create_file(file_name, request.user, parent_folder, file_key)
+                queries.create_file(file_name,
+                                    request.user,
+                                    parent_folder,
+                                    file_key,
+                                    uploaded_file.size,
+                                    os.path.splitext(uploaded_file.name)[1])
                 messages.success(request, 'The file was uploaded.')
+
                 if parent_folder is not None:
                     return redirect(f'/?folder={parent_folder.pk}')
                 else:

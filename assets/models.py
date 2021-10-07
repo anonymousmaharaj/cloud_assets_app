@@ -24,6 +24,9 @@ class File(models.Model):
     relative_key = models.CharField(max_length=255)
     shared = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                     through="SharedTable")
+    thumbnail_key = models.CharField(max_length=255, null=True)
+    size = models.IntegerField()
+    extension = models.CharField(max_length=255, null=True)
 
     class Meta:
         """Metadata for File model."""
