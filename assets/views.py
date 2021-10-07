@@ -1,5 +1,6 @@
 """Views for Assets application."""
 
+import os
 import uuid
 
 from django import http
@@ -97,7 +98,10 @@ def user_upload_file(request):
 
             file_key = f'users/{request.user.pk}/assets/{str(uuid.uuid4())}'
 
-            if s3.upload_file(uploaded_file.file, file_key):
+            if s3.upload_file(uploaded_file.file,
+                              file_key,
+                              os.path.splitext(uploaded_file.name)[1],
+                              uploaded_file.content_type):
                 queries.create_file(file_name, request.user, parent_folder, file_key)
                 messages.success(request, 'The file was uploaded.')
                 if parent_folder is not None:

@@ -39,14 +39,16 @@ def get_url(file_id):
     return response
 
 
-def upload_file(file_name, key):
+def upload_file(file_name, key, extension, content_type):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
     try:
         bucket.put_object(Body=file_name,
                           Bucket=bucket.name,
-                          Key=key)
+                          Key=key,
+                          ContentType=content_type,
+                          Tagging=f'Extension={extension}')
 
     except ClientError:
         return False
