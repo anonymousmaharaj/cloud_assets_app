@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='file',
             name='size',
-            field=models.IntegerField(),
+            field=models.IntegerField(default=0),
             preserve_default=False,
         ),
         migrations.AddField(

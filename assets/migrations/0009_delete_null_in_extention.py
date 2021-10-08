@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('assets', '0008_auto_fill_extensions.'),
+        ('assets', '0008_auto_fill_extensions'),
     ]
 
     operations = [

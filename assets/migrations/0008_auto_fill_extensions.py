@@ -17,5 +17,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(get_extensions)
+        migrations.RunPython(get_extensions, reverse_code=migrations.RunPython.noop)
     ]

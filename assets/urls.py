@@ -14,6 +14,7 @@ api_urlpatterns = [
     path('assets/files/share/', views_v2.ShareListCreateView.as_view(), name='assets-share-list'),
     path('assets/files/share/<int:pk>/', views_v2.ShareRetrieveUpdateDestroyView.as_view(), name='assets-share'),
     path('assets/files/<int:pk>/share/', views_v2.SharedFileRetrieveUpdateDestroyView.as_view(), name='assets-share-file'),
+    path('assets/files/thumbnail/<str:uuid>/', views_v2.GetThumbnailView.as_view()),
 ]
 
 urlpatterns = [

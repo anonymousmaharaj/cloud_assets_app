@@ -22,7 +22,9 @@ class TestS3Methods(TestCase):
         self.file = models.File.objects.create(title='test_file.txt',
                                                owner=self.user,
                                                folder=None,
-                                               relative_key=self.relative_key)
+                                               relative_key=self.relative_key,
+                                               size=1024,
+                                               extension='.txt')
 
     @patch('assets.aws.s3.create_bucket')
     def test_create_bucket(self, mock_create_bucket):
@@ -37,7 +39,7 @@ class TestS3Methods(TestCase):
         with tempfile.NamedTemporaryFile() as temp_file:
             mock_bucket.return_value = Mock()
             api_call.return_value = True
-            response = s3.upload_file(temp_file.name, self.relative_key)
+            response = s3.upload_file(temp_file.name, self.relative_key, 'txt', 'octet-stream')
             self.assertTrue(response)
 
     @patch('assets.aws.s3.create_bucket')

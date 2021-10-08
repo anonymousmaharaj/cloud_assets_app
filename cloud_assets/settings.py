@@ -168,7 +168,7 @@ LOGGING = {
     'loggers': {
         'django.request': {
             'handlers': ['requests'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': True,
         },
         'assets': {
@@ -183,14 +183,14 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler',
 }
 
-sentry_logging = LoggingIntegration(
-    level=logging.INFO
-)
-
-sentry_sdk.init(
-    dsn=os.getenv('SENTRY_DSN'),
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=1.0,
-    send_default_pii=True,
-    sample_rate=1.0
-)
+# sentry_logging = LoggingIntegration(
+#     level=logging.INFO
+# )
+#
+# sentry_sdk.init(
+#     dsn=os.getenv('SENTRY_DSN'),
+#     integrations=[DjangoIntegration()],
+#     traces_sample_rate=1.0,
+#     send_default_pii=True,
+#     sample_rate=1.0
+# )

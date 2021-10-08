@@ -1,4 +1,5 @@
 from tempfile import TemporaryFile
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -180,18 +181,25 @@ class ShareListTests(APITestCase):
             title='test_file_1',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_2 = File.objects.create(
             title='test_file_2',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
+
         )
 
         self.file_3 = File.objects.create(
             title='test_file_3',
             owner=self.test_user_2,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.perm_read = Permissions.objects.create(
@@ -254,18 +262,24 @@ class ShareCreateTests(APITestCase):
             title='test_file_1',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_2 = File.objects.create(
             title='test_file_2',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_3 = File.objects.create(
             title='test_file_3',
             owner=self.test_user_2,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.perm_read = Permissions.objects.create(
@@ -373,18 +387,24 @@ class ShareRetrieveUpdateDestroyTests(APITestCase):
             title='test_file_1',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_2 = File.objects.create(
             title='test_file_2',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_3 = File.objects.create(
             title='test_file_3',
             owner=self.test_user_2,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.perm_read = Permissions.objects.create(
@@ -507,12 +527,16 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             title='test_file_1',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.file_2 = File.objects.create(
             title='test_file_2',
             owner=self.test_user,
             folder=None,
+            extension='.txt',
+            size=1024
         )
 
         self.perm_rename = Permissions.objects.create(
@@ -596,3 +620,78 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
         self.client.force_authenticate(user=self.test_user)
         response = self.client.delete(f'/api/assets/files/{self.file_1.pk}/share/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ThumbnailCreateTest(APITestCase):
+
+    def setUp(self):
+        self.test_user = User.objects.create_user(username='test_user',
+                                                  password='test',
+                                                  email='test@test.test')
+
+        self.client = APIClient()
+
+        self.file_1 = File.objects.create(
+            title='test_file_1',
+            owner=self.test_user,
+            folder=None,
+            extension='.txt',
+            size=1024,
+            relative_key=f'users/{self.test_user.pk}/assets/12345678'
+        )
+
+    @patch('assets.aws.s3.check_exists')
+    def test_create_thumbnail_success(self, patch_api):
+        patch_api.return_value = True
+        self.client.force_authenticate(user=self.test_user)
+        payload = {
+            'thumbnail_key': f'thumbnails/{self.file_1.relative_key}',
+        }
+        response = self.client.post(
+            f'/api/assets/files/thumbnail/12345678/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('assets.aws.s3.check_exists')
+    def test_create_thumbnail_wrong_field(self, patch_api):
+        patch_api.return_value = True
+        self.client.force_authenticate(user=self.test_user)
+        payload = {
+            'thumbnail_keys': f'thumbnails/{self.file_1.relative_key}',
+        }
+        response = self.client.post(
+            f'/api/assets/files/thumbnail/12345678/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_thumbnail_great_then_255(self):
+        self.client.force_authenticate(user=self.test_user)
+        payload = {
+            'thumbnail_key': str(''.join(str(x) for x in range(400))),
+        }
+        response = self.client.post(
+            f'/api/assets/files/thumbnail/12345678/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_thumbnail_wrong_(self):
+        self.client.force_authenticate(user=self.test_user)
+        payload = {
+            'thumbnail_key': f'thumbnails/{self.file_1.relative_key}',
+        }
+        response = self.client.post(
+            f'/api/assets/files/thumbnail/12345678/',
+            payload,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

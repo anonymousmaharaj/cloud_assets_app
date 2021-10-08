@@ -160,11 +160,24 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         model = models.File
         fields = ('id', 'title',)
         read_only_fields = ('id',)
+        extra_kwargs = {'title': {'required': True}}
 
     def validate_title(self, data):
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)
+        instance.save()
+        return instance
+
+
+class ThumbnailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.File
+        fields = ('thumbnail_key',)
+        extra_kwargs = {'thumbnail_key': {'required': True}}
+
+    def update(self, instance, validated_data):
+        instance.thumbnail_key = validated_data.get('thumbnail_key', instance.thumbnail_key)
         instance.save()
         return instance

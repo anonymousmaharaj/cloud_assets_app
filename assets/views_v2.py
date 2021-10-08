@@ -11,11 +11,11 @@ from django.shortcuts import redirect, render, get_object_or_404
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ParseError
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from assets import forms
 from assets import models
@@ -397,11 +397,10 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
                 permissions__name='rename_only').exists():
             raise PermissionDenied(detail='forbidden')
 
-        data = {'title': request.data.get('title')}
+        # data = {'title': request.data.get('title')}
         instance = models.File.objects.get(pk=pk)
         serializer = serializers.ShareFileUpdateSerializer(instance=instance,
-                                                           partial=True,
-                                                           data=data)
+                                                           data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
         return Response({'title': instance.title})
@@ -417,3 +416,19 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         models.File.objects.get(pk=pk).delete()
 
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class GetThumbnailView(APIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, uuid):
+        s3.check_exists(request.data.get('thumbnail_key'))
+        instance = models.File.objects.filter(relative_key__contains=uuid).first()
+        if not instance:
+            raise ParseError(detail=f'File with {uuid} key does not exist.')
+        serializer = serializers.ThumbnailSerializer(instance,
+                                                     data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return Response({'detail': 'success'}, status=status.HTTP_200_OK)
