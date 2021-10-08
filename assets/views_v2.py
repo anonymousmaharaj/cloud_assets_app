@@ -419,8 +419,6 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
 
 
 class GetThumbnailView(APIView):
-    authentication_classes = (BasicAuthentication,)
-    permission_classes = (IsAuthenticated,)
 
     def post(self, request, uuid):
         s3.check_exists(request.data.get('thumbnail_key'))

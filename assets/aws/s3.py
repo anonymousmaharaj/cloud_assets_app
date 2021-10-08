@@ -10,7 +10,6 @@ from rest_framework.exceptions import ParseError
 from assets import models
 from assets.db import queries
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -109,5 +108,3 @@ def check_exists(key):
     except ClientError:
         logger.critical(f'Thumbnail does not exist. key = {key}')
         raise ParseError(f'Thumbnail does not exist. key = {key}')
-
-
