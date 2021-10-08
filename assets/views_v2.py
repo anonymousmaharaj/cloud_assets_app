@@ -425,10 +425,15 @@ class GetThumbnailView(APIView):
     def post(self, request, uuid):
         s3.check_exists(request.data.get('thumbnail_key'))
         instance = models.File.objects.filter(relative_key__contains=uuid).first()
+
         if not instance:
             raise ParseError(detail=f'File with {uuid} key does not exist.')
+        if instance.thumbnail_key is not None:
+            raise ParseError(detail=f'Thumbnail key for {uuid} key already exist.')
+
         serializer = serializers.ThumbnailSerializer(instance,
                                                      data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
+        logger.info(f'{request.data.get("thumbnail_key")} was created.')
         return Response({'detail': 'success'}, status=status.HTTP_200_OK)
