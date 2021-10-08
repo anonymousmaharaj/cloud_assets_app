@@ -428,8 +428,6 @@ class GetThumbnailView(APIView):
 
         if not instance:
             raise ParseError(detail=f'File with {uuid} key does not exist.')
-        if instance.thumbnail_key is not None:
-            raise ParseError(detail=f'Thumbnail key for {uuid} key already exist.')
 
         serializer = serializers.ThumbnailSerializer(instance,
                                                      data=request.data)
