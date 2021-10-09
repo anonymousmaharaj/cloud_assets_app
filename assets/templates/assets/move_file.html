@@ -1,19 +1,23 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="p-2">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-outline-primary btn-sm" type="submit">Move!</button>
-        </form>
-
-        <br>
-        {% if parent_folder %}
-            <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
-        {% else %}
-            <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
-        {% endif %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-3">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Move!</button>
+                </form>
+                <div class="p-1"></div>
+                {% if parent_folder %}
+                    <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
+                {% else %}
+                    <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
+                {% endif %}
+            </div>
+            <div class="col col-9"></div>
+        </div>
     </div>
 {% endblock %}
 
