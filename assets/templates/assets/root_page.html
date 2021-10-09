@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div>
+    <div>
         <div class="p-3">
 
             {% if folder_obj %}
@@ -12,40 +12,40 @@
                 {% endif %}
 
             {% endif %}
-                <a class="btn btn-primary btn-sm" aria-current="page" href="upload_file/?folder={{ folder_obj.pk }}">Upload
-                    File in
-                    current directory</a>
-                <a class="btn btn-primary btn-sm" href="create-folder/?folder={{ folder_obj.pk }}">Create new folder</a>
+            <a class="btn btn-primary btn-sm" aria-current="page" href="upload_file/?folder={{ folder_obj.pk }}">Upload
+                File in
+                current directory</a>
+            <a class="btn btn-primary btn-sm" href="create-folder/?folder={{ folder_obj.pk }}">Create new folder</a>
         </div>
 
 
-    <ul class="list-group list-group-flush">
-        {% for row in rows %}
-            {% if row.is_folder %}
-                <li class="list-group-item">
-                    <a href="/?folder={{ row.id }}">{{ row.title }}</a> |
-                    <a href="delete-folder/?folder={{ row.id }}" class="btn btn-outline-primary btn-sm"
-                       onclick='return confirm("Are you sure?")'>Delete</a>
-                    <a href="assets/folder/{{ row.id }}/rename/" class="btn btn-outline-primary btn-sm">Rename</a>
-                </li>
+        <ul class="list-group list-group-flush">
+            {% for row in rows %}
+                {% if row.is_folder %}
+                    <li class="list-group-item">
+                        <a href="/?folder={{ row.id }}"><i class="material-icons">folder_open</i>{{ row.title }}</a> |
+                        <a href="delete-folder/?folder={{ row.id }}" class="btn btn-outline-primary btn-sm"
+                           onclick='return confirm("Are you sure?")'>Delete</a>
+                        <a href="assets/folder/{{ row.id }}/rename/" class="btn btn-outline-primary btn-sm">Rename</a>
+                    </li>
 
 
-            {% else %}
-                <li class="list-group-item">
-                    {{ row.title }} |
-                    <a href="download/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Download</a>
-                    <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'
-                       class="btn btn-outline-primary btn-sm">Delete</a>
-                    <a href="move/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Move</a>
-                    <a href="rename-file/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Rename</a>
-                    <a href="assets/files/{{ row.id }}/share/" class="btn btn-outline-primary btn-sm">Share</a>
-                </li>
+                {% else %}
+                    <li class="list-group-item">
+                        <span class="material-icons">description</span>{{ row.title }}
+                        <a href="download/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Download</a>
+                        <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'
+                           class="btn btn-outline-primary btn-sm">Delete</a>
+                        <a href="move/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Move</a>
+                        <a href="rename-file/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Rename</a>
+                        <a href="assets/files/{{ row.id }}/share/" class="btn btn-outline-primary btn-sm">Share</a>
+                    </li>
 
-            {% endif %}
+                {% endif %}
 
-        {% endfor %}
-    </ul>
-</div>
+            {% endfor %}
+        </ul>
+    </div>
 
     {% if shared_rows %}
         <div class="card">
