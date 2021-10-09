@@ -34,9 +34,11 @@ def user_register(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Success!')
-            return redirect('root_page')
+            return redirect('login')
         else:
             messages.error(request, 'Error!')
+            return render(request, 'authentication/register.html', context={'form': form})
+
     elif request.method == 'GET':
         form = forms.UserRegisterForm()
         context = {'form': form}

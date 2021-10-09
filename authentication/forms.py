@@ -8,14 +8,17 @@ from django.contrib.auth.models import User
 class UserLoginForm(AuthenticationForm):
     """Basic class for login."""
 
-    username = forms.CharField(label='Username')
-    password = forms.PasswordInput()
+    username = forms.CharField(label='Username', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 
 
 class UserRegisterForm(UserCreationForm):
     """Custom form for registration."""
 
-    email = forms.EmailField()
+    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    username = forms.CharField(label='Username', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 
     class Meta:
         """Init Meta class for UserCreationForm."""
