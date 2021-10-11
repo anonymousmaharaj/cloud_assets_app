@@ -1,5 +1,6 @@
 """Models of assets app."""
 import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -23,7 +24,7 @@ class File(models.Model):
                               related_name='files')
     relative_key = models.CharField(max_length=255)
     shared = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                    through="SharedTable")
+                                    through='SharedTable')
     thumbnail_key = models.CharField(max_length=255, null=True)
     size = models.IntegerField()
     extension = models.CharField(max_length=255, null=True)
@@ -101,6 +102,8 @@ class Folder(models.Model):
 
 
 class Permissions(models.Model):
+    """Permissions for ShareTable."""
+
     title = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
 
@@ -109,6 +112,8 @@ class Permissions(models.Model):
 
 
 class SharedTable(models.Model):
+    """Model for managing sharing."""
+
     file = models.ForeignKey(File, on_delete=models.PROTECT)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='shared_files')
     permissions = models.ManyToManyField(Permissions)
