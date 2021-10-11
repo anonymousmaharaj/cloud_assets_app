@@ -19,9 +19,15 @@ class UserRegisterForm(UserCreationForm):
     username = forms.CharField(label='Username', widget=forms.TextInput(attrs={'class': 'form-control'}))
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
     password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    invite_code = forms.CharField(max_length=30, label='Invite code',
+                                  widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     class Meta:
         """Init Meta class for UserCreationForm."""
 
         model = User
         fields = ('username', 'email', 'password1', 'password2')
+
+    def clean_invite_code(self):
+        if self.cleaned_data['invite_code'] != 'Xhgurr432kda':
+            raise forms.ValidationError('Enter a valid invite code')
