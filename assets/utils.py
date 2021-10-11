@@ -20,4 +20,5 @@ def custom_exception_handler(exc, context):
 
 
 def create_file_relative_key(user_id):
+    """Generate unique key."""
     return f'users/{user_id}/assets/{uuid.uuid4()}'

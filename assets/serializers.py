@@ -1,7 +1,7 @@
 """All serializers."""
 import bleach
-from django.core import exceptions
 from django.contrib.auth.models import User
+from django.core import exceptions
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -106,6 +106,8 @@ class FolderListCreateSerializer(serializers.ModelSerializer):
 
 
 class ShareListCreateSerializer(serializers.ModelSerializer):
+    """Serializer for List and Create methods for ShareTable."""
+
     email = serializers.EmailField(write_only=True)
 
     class Meta:
@@ -114,15 +116,18 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'user')
 
     def validate_email(self, data):
+        """Validate email field for user exists and sharing with yourself."""
         if not User.objects.filter(email=data).exists():
             raise serializers.ValidationError({'detail': 'User is not exists.'})
+
         if self.context['request'].user == User.objects.filter(email=data).first():
             raise serializers.ValidationError({'detail': 'Cannot share with yourself.'})
+
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def validate_expired(self, data):
         if data < timezone.now():
-            raise serializers.ValidationError('Cannot be less then now.')
+            raise serializers.ValidationError({'detail': 'Cannot be less then now.'})
         return data
 
     def create(self, validated_data):
@@ -144,6 +149,8 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
 
 
 class ShareRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
+    """Serializer for get, update and delete methods."""
+
     class Meta:
         model = models.SharedTable
         fields = ('id', 'expired', 'user', 'file', 'permissions',)
@@ -156,6 +163,8 @@ class ShareRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
 
 
 class ShareFileUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for rename file through sharing."""
+
     class Meta:
         model = models.File
         fields = ('id', 'title',)
@@ -166,18 +175,22 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         return bleach.clean(data, tags=[], strip=True, strip_comments=True)
 
     def update(self, instance, validated_data):
+        """Override update method for rename file."""
         instance.title = validated_data.get('title', instance.title)
         instance.save()
         return instance
 
 
 class ThumbnailSerializer(serializers.ModelSerializer):
+    """Serializer for thumbnail."""
+
     class Meta:
         model = models.File
         fields = ('thumbnail_key',)
         extra_kwargs = {'thumbnail_key': {'required': True}}
 
     def update(self, instance, validated_data):
+        """Override update method for add thumbnail_key."""
         instance.thumbnail_key = validated_data.get('thumbnail_key', instance.thumbnail_key)
         instance.save()
         return instance
