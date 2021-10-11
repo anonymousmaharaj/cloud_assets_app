@@ -4,9 +4,6 @@ import logging
 
 import environ
 
-env = environ.Env()
-environ.Env.read_env()
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -105,7 +102,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'cloud_assets/static'),
 ]
-
 
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler',
