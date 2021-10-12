@@ -1,10 +1,12 @@
 """Views for Assets application."""
 
+import os
 import uuid
 
 from django import http
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 
 from assets import forms
@@ -38,7 +40,9 @@ def show_page(request):
                                    pk=folder_id) if folder_id else None
 
     rows = queries.get_assets_list(folder_id, request.user.pk)
-    context = {'rows': rows, 'folder_obj': folder_obj}
+    shared_rows = models.SharedTable.objects.filter(user=request.user,
+                                                    created_at__lt=F('expired'))
+    context = {'rows': rows, 'folder_obj': folder_obj, 'shared_rows': shared_rows}
     return render(request, 'assets/root_page.html', context)
 
 
@@ -94,9 +98,18 @@ def user_upload_file(request):
 
             file_key = f'users/{request.user.pk}/assets/{str(uuid.uuid4())}'
 
-            if s3.upload_file(uploaded_file.file, file_key):
-                queries.create_file(file_name, request.user, parent_folder, file_key)
+            if s3.upload_file(uploaded_file.file,
+                              file_key,
+                              os.path.splitext(uploaded_file.name)[1],
+                              uploaded_file.content_type):
+                queries.create_file(file_name,
+                                    request.user,
+                                    parent_folder,
+                                    file_key,
+                                    uploaded_file.size,
+                                    os.path.splitext(uploaded_file.name)[1])
                 messages.success(request, 'The file was uploaded.')
+
                 if parent_folder is not None:
                     return redirect(f'/?folder={parent_folder.pk}')
                 else:
@@ -306,6 +319,7 @@ def delete_file(request):
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
         if s3.delete_key(file_id):
+            queries.delete_shared_table(file_id)
             queries.delete_file(file_id)
             messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:

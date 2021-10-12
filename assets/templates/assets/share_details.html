@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="p-2">
+        {% for row in rows %}
+            <b>{{ row.file.title }} | {{ row.user }} | {{ row.expired }}</b>|
+            <a class="btn btn-outline-primary btn-sm" href="/assets/files/share/{{ row.pk }}/update/">Change</a> |
+            <a class="btn btn-outline-primary btn-sm" href="/assets/files/share/{{ row.id }}/delete/"
+               onclick='return confirm("Are you sure?")'>Delete Share</a><br>
+            <ul>
+                {% for permission in row.permissions.all %}
+                    <li>{{ permission }}</li>
+                {% endfor %}
+            </ul>
+            <hr>
+        {% endfor %}
+        <br>
+        {% if parent_folder %}
+            <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
+        {% else %}
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
+        {% endif %}
+    </div>
+{% endblock %}
+

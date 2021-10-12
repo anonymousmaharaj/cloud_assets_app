@@ -1,0 +1,4 @@
+static
+venv
+logs
+cloud_assets/.env

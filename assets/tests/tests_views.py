@@ -34,13 +34,17 @@ class TestRootPageView(TestCase):
             title='test_file.txt',
             owner=self.user,
             folder=None,
-            relative_key=(str(uuid.uuid4()))
+            relative_key=(str(uuid.uuid4())),
+            extension='.txt',
+            size=1024
         )
         models.File.objects.create(
             title='test_file.txt',
             owner=self.user,
             folder=folder,
-            relative_key=(str(uuid.uuid4()))
+            relative_key=(str(uuid.uuid4())),
+            extension='.txt',
+            size=1024
         )
 
     def test_root_page_with_auth_get(self):
@@ -174,7 +178,10 @@ class TestRenameFileView(TestCase):
             title='test_file.txt',
             owner=self.user,
             folder=None,
-            relative_key=(str(uuid.uuid4()))
+            relative_key=(str(uuid.uuid4())),
+            extension='.txt',
+            size=1024
+
         )
         self.get_params = {
             'file': self.file.pk
@@ -220,7 +227,9 @@ class TestMoveFileView(TestCase):
             title='test_file.txt',
             owner=self.user,
             folder=None,
-            relative_key=(str(uuid.uuid4()))
+            relative_key=(str(uuid.uuid4())),
+            extension='.txt',
+            size=1024
         )
         self.get_params = {
             'file': self.file.pk
@@ -262,7 +271,9 @@ class TestDeleteFileView(TestCase):
             title='test_file.txt',
             owner=self.user,
             folder=None,
-            relative_key=(str(uuid.uuid4()))
+            relative_key=(str(uuid.uuid4())),
+            extension='.txt',
+            size=1024
         )
         self.get_params = {
             'file': self.file.pk

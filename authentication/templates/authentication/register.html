@@ -1,9 +1,27 @@
 {% extends 'base.html' %}
 {% block title %} Sign Up {% endblock %}
 {% block content %}
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_ul }}
-        <button type="submit">Sign Up!</button>
-    </form>
+    <div class="container">
+        <div class="row">
+			<div class="col-md-5 mx-auto">
+			  <div id="second">
+			      <div class="form">
+                        <div class="logo mb-3">
+                           <div class="col-md-12 text-center">
+                              <h1 >Signup</h1>
+                           </div>
+                        </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <br>
+                            <div class="col-md-12 text-center mb-3">
+                                <button class="btn btn-primary btn" type="submit">Sign Up!</button>
+                            </div>
+                        </form>
+                  </div>
+			</div>
+		</div>
+      </div>
+    </div>
 {% endblock %}

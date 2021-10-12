@@ -1,12 +1,16 @@
 """Any API methods with AWS S3."""
+import logging
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from django.conf import settings
+from rest_framework.exceptions import ParseError
 
 from assets import models
 from assets.db import queries
+
+logger = logging.getLogger(__name__)
 
 
 def create_bucket():
@@ -39,14 +43,16 @@ def get_url(file_id):
     return response
 
 
-def upload_file(file_name, key):
+def upload_file(file_name, key, extension, content_type):
     """Upload file to AWS S3 Bucket."""
     bucket = create_bucket()
 
     try:
         bucket.put_object(Body=file_name,
                           Bucket=bucket.name,
-                          Key=key)
+                          Key=key,
+                          ContentType=content_type,
+                          Tagging=f'Extension={extension}')
 
     except ClientError:
         return False
@@ -92,3 +98,14 @@ def delete_recursive(folder_id):
         for folder in folders_qs:
             delete_recursive(folder.pk)
     models.Folder.objects.filter(pk=folder_id).delete()
+
+
+def check_exists(key):
+    """Check thumbnails exist."""
+    bucket = create_bucket()
+    s3 = boto3.client('s3')
+    try:
+        s3.head_object(Bucket=bucket.name, Key=key)
+    except ClientError:
+        logger.critical(f'Thumbnail does not exist. key = {key}')
+        raise ParseError(f'Thumbnail does not exist. key = {key}')

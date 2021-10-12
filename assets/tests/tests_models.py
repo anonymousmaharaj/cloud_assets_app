@@ -23,7 +23,9 @@ class TestFileModel(TestCase):
         models.File(title=os.path.basename(temp_file.name),
                     owner=self.user,
                     folder=None,
-                    relative_key=key).save()
+                    relative_key=key,
+                    extension='.txt',
+                    size=1024).save()
 
     @property
     def get_current_id(self):
@@ -40,7 +42,10 @@ class TestFileModel(TestCase):
             models.File.objects.create(title=current_file.title,
                                        folder_id=None,
                                        relative_key=current_file.relative_key,
-                                       owner=self.user)
+                                       owner=self.user,
+                                       extension='.txt',
+                                       size=1024
+                                       )
         except IntegrityError:
             self.assertRaises(IntegrityError)
 

@@ -72,12 +72,14 @@ def rename_folder(folder_id, new_title):
     folder_obj.save()
 
 
-def create_file(file_name, user, folder, key):
+def create_file(file_name, user, folder, key, size, extension):
     """Create file in DB."""
     models.File(title=file_name,
                 owner=user,
                 folder=folder,
-                relative_key=key).save()
+                relative_key=key,
+                size=size,
+                extension=extension).save()
 
 
 def delete_file(file_id):
@@ -90,3 +92,8 @@ def create_folder(user, title, parent_id):
     models.Folder(title=title,
                   owner=user,
                   parent_id=parent_id).save()
+
+
+def delete_shared_table(file_id):
+    """Delete share table."""
+    models.SharedTable.objects.filter(file_id=file_id).delete()

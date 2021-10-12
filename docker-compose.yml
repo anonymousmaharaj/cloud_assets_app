@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/usr/src/app/
+      - static:/usr/src/app/static
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./cloud_assets/.env
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    volumes:
+      - static:/usr/src/app/static
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+volumes:
+  static:
