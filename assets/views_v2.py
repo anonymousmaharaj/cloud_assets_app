@@ -7,11 +7,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.db.models import F
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
-from rest_framework.exceptions import PermissionDenied, ParseError
+from rest_framework.exceptions import ParseError, PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -22,15 +22,19 @@ from assets import models
 from assets import permissions
 from assets import serializers
 from assets.aws import s3
+from assets.db import queries
 from assets.utils import create_file_relative_key
 
 logger = logging.getLogger(__name__)
 
 
 class UpdateShareView(LoginRequiredMixin, views.View):
+    """Update share object."""
+
     login_url = '/login/'
 
     def get(self, request, share_id):
+        """Create empty form."""
         share = get_object_or_404(models.SharedTable, id=share_id)
         owned_shared_rows = models.SharedTable.objects.filter(
             file_id__in=[file.id for file in request.user.files.all()]
@@ -47,6 +51,7 @@ class UpdateShareView(LoginRequiredMixin, views.View):
         )
 
     def post(self, request, share_id):
+        """Update share object."""
         share = get_object_or_404(models.SharedTable, id=share_id)
         owned_shared_rows = models.SharedTable.objects.filter(
             file_id__in=[file.id for file in request.user.files.all()]
@@ -66,9 +71,12 @@ class UpdateShareView(LoginRequiredMixin, views.View):
 
 
 class ListShareView(LoginRequiredMixin, views.View):
+    """List of shares."""
+
     login_url = '/login/'
 
     def get(self, request):
+        """List of shares."""
         return render(request,
                       'assets/share_details.html',
                       {'rows': models.SharedTable.objects.filter(
@@ -77,9 +85,12 @@ class ListShareView(LoginRequiredMixin, views.View):
 
 
 class DeleteShareView(LoginRequiredMixin, views.View):
+    """Delete share."""
+
     login_url = '/login/'
 
     def get(self, request, share_id):
+        """Delete share."""
         share = get_object_or_404(models.SharedTable, id=share_id)
         owned_shared_rows = models.SharedTable.objects.filter(
             file_id__in=[file.id for file in request.user.files.all()]
@@ -94,9 +105,12 @@ class DeleteShareView(LoginRequiredMixin, views.View):
 
 
 class CreateShareView(LoginRequiredMixin, views.View):
+    """Create ShareTable."""
+
     login_url = '/login/'
 
     def get(self, request, file_id: int):
+        """Create empty form."""
         file = models.File.objects.filter(pk=file_id).first()
         if not file:
             logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {file_id}')
@@ -116,6 +130,7 @@ class CreateShareView(LoginRequiredMixin, views.View):
         )
 
     def post(self, request, file_id: int):
+        """Create ShareTable."""
         file = models.File.objects.filter(pk=file_id).first()
         if not file:
             logger.warning(f'[{request.user.username}] try to share file is not exist. - ID: {file_id}')
@@ -153,9 +168,12 @@ class CreateShareView(LoginRequiredMixin, views.View):
 
 
 class DownloadShareFileView(LoginRequiredMixin, views.View):
+    """Get a shared file."""
+
     login_url = '/login/'
 
     def get(self, request, file_id):
+        """Get a shared file."""
         if not models.SharedTable.objects.filter(
                 file_id=file_id,
                 user=request.user.pk,
@@ -170,9 +188,12 @@ class DownloadShareFileView(LoginRequiredMixin, views.View):
 
 
 class RenameShareFileView(LoginRequiredMixin, views.View):
+    """Rename a shared file."""
+
     login_url = '/login/'
 
     def get(self, request, file_id):
+        """Create empty form."""
         if not models.SharedTable.objects.filter(
                 file_id=file_id,
                 user=request.user.pk,
@@ -188,6 +209,7 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
         )
 
     def post(self, request, file_id):
+        """Rename file."""
         file = get_object_or_404(models.File, pk=file_id)
 
         if not models.SharedTable.objects.filter(
@@ -211,9 +233,12 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
 
 
 class DeleteShareFileView(LoginRequiredMixin, views.View):
+    """Delete a shared file."""
+
     login_url = '/login/'
 
     def get(self, request, file_id):
+        """Delete a shared file."""
         file = get_object_or_404(models.File, pk=file_id)
 
         if not models.SharedTable.objects.filter(
@@ -348,13 +373,14 @@ class FileListCreateView(generics.ListCreateAPIView):
 
 
 class ShareListCreateView(generics.ListCreateAPIView):
+    """Create and list for ShareTable."""
+
     queryset = models.SharedTable.objects.all()
     permission_classes = (permissions.IsShareOwner, permissions.IsSharingFileOwner, IsAuthenticated)
     serializer_class = serializers.ShareListCreateSerializer
 
     def get_queryset(self):
         """Filter objects by user."""
-
         return models.SharedTable.objects.filter(
             file_id__in=[file.id for file in self.request.user.files.all()],
             created_at__lt=F('expired')
@@ -370,7 +396,6 @@ class ShareRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         """Filter objects by user."""
-
         return models.SharedTable.objects.filter(
             file_id__in=[file.id for file in self.request.user.files.all()],
             created_at__lt=F('expired')
@@ -378,10 +403,13 @@ class ShareRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SharedFileRetrieveUpdateDestroyView(APIView):
+    """Interact with shared file."""
+
     authentication_classes = (BasicAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
+        """Get download URL for a shared file."""
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
@@ -391,6 +419,7 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         return Response({'url': s3.get_url(pk)})
 
     def put(self, request, pk):
+        """Rename file if permission is okay."""
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
@@ -406,21 +435,24 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         return Response({'title': instance.title})
 
     def delete(self, request, pk):
+        """Delete file if permission is okay."""
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
                 permissions__name='delete_only').exists():
             raise PermissionDenied(detail='forbidden')
 
-        models.SharedTable.objects.filter(file_id=pk, user=request.user).first().delete()
-        models.File.objects.get(pk=pk).delete()
+        queries.delete_shared_table(pk)
+        queries.delete_file(pk)
 
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class GetThumbnailView(APIView):
+    """Create thumbnail in db with aws lambda."""
 
     def post(self, request, uuid):
+        """Write a thumbnail in DB."""
         s3.check_exists(request.data.get('thumbnail_key'))
         instance = models.File.objects.filter(relative_key__contains=uuid).first()
 

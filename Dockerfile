@@ -1,17 +1,14 @@
-FROM ubuntu
-
-ENV TZ=UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-ENV PYTHONUNBUFFERED = 1
-RUN apt update && apt -y upgrade
-RUN apt install python3-pip python3-dev gunicorn nano libpq-dev curl -y
+FROM python:3
 
 WORKDIR /usr/src/app
 
-COPY . .
-RUN pip3 install -r requirements.txt
+COPY requirements.txt .
+COPY entrypoint.sh .
 
-EXPOSE 8000
+RUN pip install -r requirements.txt
+
+RUN chmod +x entrypoint.sh
+
+COPY . .
 
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
-

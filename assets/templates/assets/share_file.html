@@ -1,15 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <form method="post">{% csrf_token %}
-         {{ form.as_p }}
-        <button type="submit">Share</button>
-    </form>
-    <br>
-    {% if parent_folder %}
-        <a href="/?folder={{ parent_folder }}">Back</a>
-    {% else %}
-        <a href="{% url 'root_page' %}">Back</a>
-    {% endif %}
+    <div class="p-2">
+        <form method="post">{% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-outline-primary btn-sm" type="submit">Share</button>
+        </form>
+        <br>
+        {% if parent_folder %}
+            <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
+        {% else %}
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
+        {% endif %}
+    </div>
 {% endblock %}
 

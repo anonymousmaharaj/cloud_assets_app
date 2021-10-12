@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  web:
+    image: "anonymousmaharaj/django"
+    volumes:
+      - static:/usr/src/app/static
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - AWS_KEY=${AWS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_SIGNATURE_VERSION=${AWS_SIGNATURE_VERSION}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DEBUG=${DEBUG}
+      - S3_BUCKET=${S3_BUCKET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+
+  nginx:
+    image: "anonymousmaharaj/django-nginx"
+    volumes:
+      - static:/usr/src/app/static
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+volumes:
+  static:

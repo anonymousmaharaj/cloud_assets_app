@@ -4,9 +4,9 @@ import os
 import uuid
 
 from django import http
-from django.db.models import F
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 
 from assets import forms
@@ -319,6 +319,7 @@ def delete_file(request):
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
         if s3.delete_key(file_id):
+            queries.delete_shared_table(file_id)
             queries.delete_file(file_id)
             messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:

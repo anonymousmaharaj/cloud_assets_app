@@ -92,3 +92,8 @@ def create_folder(user, title, parent_id):
     models.Folder(title=title,
                   owner=user,
                   parent_id=parent_id).save()
+
+
+def delete_shared_table(file_id):
+    """Delete share table."""
+    models.SharedTable.objects.filter(file_id=file_id).delete()

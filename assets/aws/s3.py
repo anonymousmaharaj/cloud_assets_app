@@ -101,6 +101,7 @@ def delete_recursive(folder_id):
 
 
 def check_exists(key):
+    """Check thumbnails exist."""
     bucket = create_bucket()
     s3 = boto3.client('s3')
     try:

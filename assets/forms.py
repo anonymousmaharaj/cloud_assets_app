@@ -20,7 +20,8 @@ class RenameFolderForm(forms.ModelForm):
 
 
 class UpdateShareForm(forms.ModelForm):
-    """"""
+    """Form for update ShareTable."""
+
     expired = forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M:%S'])
     permissions = forms.ModelMultipleChoiceField(queryset=models.Permissions.objects.all(),
                                                  widget=forms.CheckboxSelectMultiple)
@@ -37,8 +38,10 @@ class UpdateShareForm(forms.ModelForm):
 
 
 class CreateShareForm(forms.Form):
+    """Form for create ShareTable."""
 
     def __init__(self, user=None, *args, **kwargs):
+        """Override __init__ method for add user."""
         self.user = user
         super().__init__(*args, **kwargs)
 
@@ -49,6 +52,7 @@ class CreateShareForm(forms.Form):
                                                  widget=forms.CheckboxSelectMultiple)
 
     def clean_email(self):
+        """Validate email field for user exists and sharing with yourself."""
         if self.cleaned_data['email'] == self.user.email:
             raise forms.ValidationError('Cannot share with yourself.')
 
