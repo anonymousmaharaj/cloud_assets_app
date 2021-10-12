@@ -65,7 +65,7 @@ class FileListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder')
+        fields = ('id', 'title', 'folder', 'extension', 'size')
         read_only_fields = ('id',)
 
     def validate_title(self, data):

@@ -1,9 +1,5 @@
 import os
 
-import logging
-
-import environ
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -27,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'assets.apps.AssetsConfig',
+    'drf_yasg',
     'authentication.apps.AuthConfig',
     'rest_framework',
 ]
