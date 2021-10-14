@@ -11,10 +11,11 @@ api_urlpatterns = [
     path('assets/folders/<int:pk>/', views_v2.FolderRetrieveUpdateView.as_view()),
     path('assets/files/', views_v2.FileListCreateView.as_view()),
     path('assets/files/<int:pk>/', views_v2.FileRetrieveUpdateDestroyView.as_view()),
-    path('assets/files/share/', views_v2.ShareListCreateView.as_view(), name='assets-share-list'),
-    path('assets/files/share/<int:pk>/', views_v2.ShareRetrieveUpdateDestroyView.as_view(), name='assets-share'),
-    path('assets/files/<int:pk>/share/', views_v2.SharedFileRetrieveUpdateDestroyView.as_view()),
-    path('assets/files/thumbnail/<str:uuid>/', views_v2.GetThumbnailView.as_view()),
+    path('assets/files/shared/', views_v2.ShareListCreateView.as_view(), name='assets-share-list'),
+    path('assets/files/shared/<int:pk>/', views_v2.ShareUpdateDestroyView.as_view(), name='assets-share'),
+    path('assets/files/shared-with-me/', views_v2.ListSharedFilesView.as_view()),
+    path('assets/files/shared-with-me/<int:pk>/', views_v2.SharedFileRetrieveUpdateDestroyView.as_view()),
+    path('assets/files/thumbnail/<str:uuid>/', views_v2.CreateThumbnailView.as_view()),
 ]
 
 urlpatterns = [
