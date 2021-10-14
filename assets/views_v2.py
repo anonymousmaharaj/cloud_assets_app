@@ -447,20 +447,33 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
-class GetThumbnailView(APIView):
+class ListSharedFilesView(generics.ListAPIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.RetrieveListSharedFilesSerializer
+
+    def get_queryset(self):
+        return models.SharedTable.objects.filter(
+            user=self.request.user,
+            created_at__lt=F('expired')
+        )
+
+
+class CreateThumbnailView(APIView):
     """Create thumbnail in db with aws lambda."""
 
+    # TODO: Add lambda permissions.
     def post(self, request, uuid):
         """Write a thumbnail in DB."""
-        s3.check_exists(request.data.get('thumbnail_key'))
-        instance = models.File.objects.filter(relative_key__contains=uuid).first()
+        serializer = serializers.ThumbnailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not instance:
-            raise ParseError(detail=f'File with {uuid} key does not exist.')
+        thumbnail_key = serializer.validated_data['thumbnail_key']
+        instance = get_object_or_404(models.File, relative_key__contains=uuid)
+        s3.check_exists(thumbnail_key)
 
-        serializer = serializers.ThumbnailSerializer(instance,
-                                                     data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        instance.thumbnail_key = thumbnail_key
+        instance.save()
+
         logger.info(f'{request.data.get("thumbnail_key")} was created.')
         return Response({'detail': 'success'}, status=status.HTTP_200_OK)
