@@ -104,6 +104,10 @@ class Folder(models.Model):
 class Permissions(models.Model):
     """Permissions for ShareTable."""
 
+    READ_ONLY = 'read_only'
+    RENAME_ONLY = 'rename_only'
+    DELETE_ONLY = 'delete_only'
+
     title = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
 

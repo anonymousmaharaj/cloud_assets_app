@@ -197,7 +197,7 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
         if not models.SharedTable.objects.filter(
                 file_id=file_id,
                 user=request.user.pk,
-                permissions__name='rename_only').exists():
+                permissions__name=models.Permissions.READ_ONLY).exists():
             logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
@@ -215,8 +215,7 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
         if not models.SharedTable.objects.filter(
                 file_id=file_id,
                 user=request.user.pk,
-                permissions__name='rename_only'
-        ).exists():
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
             logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
@@ -244,7 +243,7 @@ class DeleteShareFileView(LoginRequiredMixin, views.View):
         if not models.SharedTable.objects.filter(
                 file_id=file_id,
                 user=request.user.pk,
-                permissions__name='delete_only').exists():
+                permissions__name=models.Permissions.DELETE_ONLY).exists():
             logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
@@ -413,8 +412,8 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
-                permissions__name='read_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.READ_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
         return Response({'url': s3.get_url(pk)})
 
@@ -423,8 +422,8 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
-                permissions__name='rename_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
         # data = {'title': request.data.get('title')}
         instance = models.File.objects.get(pk=pk)
@@ -439,8 +438,8 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
         if not models.SharedTable.objects.filter(
                 file_id=pk,
                 user=request.user.pk,
-                permissions__name='delete_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.DELETE_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
         queries.delete_shared_table(pk)
         queries.delete_file(pk)
