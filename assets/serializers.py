@@ -13,7 +13,7 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Folder
-        fields = ('id', 'title', 'parent')
+        fields = ('id', 'title',)
         read_only_fields = ('id',)
 
     def validate_title(self, data):
@@ -22,12 +22,7 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Override this method to validate editable fields."""
-        if validated_data.get('parent') is not None:
-            if instance == validated_data.get('parent').parent:
-                raise serializers.ValidationError({'detail': 'Cannot move folder in this folder.'})
-
         instance.title = validated_data.get('title', instance.title)
-        instance.parent = validated_data.get('parent', instance.parent)
         try:
             instance.clean()
         except exceptions.ValidationError as error:
@@ -65,8 +60,8 @@ class FileListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder')
-        read_only_fields = ('id',)
+        fields = ('id', 'title', 'folder', 'size', 'extension')
+        read_only_fields = ('id', 'size', 'extension')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
@@ -131,7 +126,7 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """Override this method to validate exist folder."""
+        """Override this method to validate exist share."""
         if models.SharedTable.objects.filter(file=validated_data.get('file').pk,
                                              user=User.objects.filter(
                                                  email=validated_data.get('email')).first()).exists():
@@ -148,8 +143,8 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ShareRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
-    """Serializer for get, update and delete methods."""
+class ShareUpdateDestroySerializer(serializers.ModelSerializer):
+    """Serializer for update and delete share's methods."""
 
     class Meta:
         model = models.SharedTable
@@ -181,16 +176,15 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ThumbnailSerializer(serializers.ModelSerializer):
+class ThumbnailSerializer(serializers.Serializer):
     """Serializer for thumbnail."""
 
-    class Meta:
-        model = models.File
-        fields = ('thumbnail_key',)
-        extra_kwargs = {'thumbnail_key': {'required': True}}
+    thumbnail_key = serializers.CharField(required=True)
 
-    def update(self, instance, validated_data):
-        """Override update method for add thumbnail_key."""
-        instance.thumbnail_key = validated_data.get('thumbnail_key', instance.thumbnail_key)
-        instance.save()
-        return instance
+
+class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
+    """Serializer for retrieve list of shared files with user."""
+
+    class Meta:
+        model = models.SharedTable
+        fields = ('id', 'file', 'expired', 'permissions',)
