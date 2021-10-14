@@ -79,11 +79,6 @@ def delete_key(file_id):
         return True
 
 
-def delete_folders(folder_id):
-    """Delete folder with files from S3."""
-    delete_recursive(folder_id)
-
-
 def delete_recursive(folder_id):
     """Find all children and delete them."""
     folders = models.Folder.objects.filter(parent=folder_id).exists()

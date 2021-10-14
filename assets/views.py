@@ -374,7 +374,7 @@ def delete_folder(request):
         folder_obj = models.Folder.objects.get(pk=folder_id)
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
-        s3.delete_folders(folder_id)
+        s3.delete_recursive(folder_id)
         messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
             return redirect(f'/?folder={parent_id}')
