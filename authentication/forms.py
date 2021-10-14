@@ -1,4 +1,5 @@
 """Forms for auth app."""
+import os
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
@@ -29,5 +30,5 @@ class UserRegisterForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
 
     def clean_invite_code(self):
-        if self.cleaned_data['invite_code'] != 'Xhgurr432kda':
+        if self.cleaned_data['invite_code'] != os.getenv('INVITE_CODE'):
             raise forms.ValidationError('Enter a valid invite code')
