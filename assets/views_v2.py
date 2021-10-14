@@ -1,5 +1,6 @@
 """Views for assets app."""
 import logging
+import os
 
 from django import http, views
 from django.contrib import messages
@@ -8,10 +9,12 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied
+from rest_framework import mixins
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -133,12 +136,12 @@ class CreateShareView(LoginRequiredMixin, views.View):
         """Create ShareTable."""
         file = models.File.objects.filter(pk=file_id).first()
         if not file:
-            logger.warning(f'[{request.user.username}] try to share file is not exist. - ID: {file_id}')
+            logger.warning(f'[{request.user.username}] attempt to share file is not exist. - ID: {file_id}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not file.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] attempt to get access to the denied file - ID: {file_id} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -179,6 +182,7 @@ class DownloadShareFileView(LoginRequiredMixin, views.View):
                 user=request.user.pk,
                 permissions__name='read_only').exists():
             logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -374,8 +378,7 @@ class FileListCreateView(generics.ListCreateAPIView):
 class ShareListCreateView(generics.ListCreateAPIView):
     """Create and list for ShareTable."""
 
-    queryset = models.SharedTable.objects.all()
-    permission_classes = (permissions.IsShareOwner, permissions.IsSharingFileOwner, IsAuthenticated)
+    permission_classes = (IsAuthenticated,)
     serializer_class = serializers.ShareListCreateSerializer
 
     def get_queryset(self):
@@ -383,24 +386,41 @@ class ShareListCreateView(generics.ListCreateAPIView):
         queries.delete_expired_shares()
         now = timezone.now()
         return models.SharedTable.objects.filter(
-            file_id__in=[file.id for file in self.request.user.files.all()],
-            created_at__lt=F('expired')
+            file__owner=self.request.user,
+            expired__gt=now
         )
 
+    def create(self, request, *args, **kwargs):
+        """Override 'create' method to return 201 Created to exclude payload."""
+        super(ShareListCreateView, self).create(request, *args, **kwargs)
+        return Response(status=status.HTTP_201_CREATED)
 
-class ShareRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    def perform_create(self, serializer):
+        file = serializer.validated_data.get('file')
+        if not self.request.user.files.filter(pk=file.pk):
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
+
+        if not User.objects.filter(email=serializer.validated_data.get('email')).exists():
+            return
+
+        super(ShareListCreateView, self).perform_create(serializer)
+
+
+class ShareUpdateDestroyView(mixins.DestroyModelMixin, mixins.UpdateModelMixin, generics.GenericAPIView):
     """View for rename folder's endpoint."""
 
-    queryset = models.SharedTable.objects.all()
-    permission_classes = (permissions.IsShareOwner, IsAuthenticated)
-    serializer_class = serializers.ShareRetrieveUpdateDestroySerializer
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.ShareUpdateDestroySerializer
 
     def get_queryset(self):
         """Filter objects by user."""
-        return models.SharedTable.objects.filter(
-            file_id__in=[file.id for file in self.request.user.files.all()],
-            created_at__lt=F('expired')
-        )
+        return models.SharedTable.objects.filter(file__owner=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class SharedFileRetrieveUpdateDestroyView(APIView):
@@ -427,12 +447,12 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
                 permissions__name=models.Permissions.RENAME_ONLY).exists():
             raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        # data = {'title': request.data.get('title')}
         instance = models.File.objects.get(pk=pk)
         serializer = serializers.ShareFileUpdateSerializer(instance=instance,
                                                            data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response({'title': instance.title})
 
     def delete(self, request, pk):
