@@ -102,5 +102,6 @@ def check_exists(key):
     try:
         s3.head_object(Bucket=bucket.name, Key=key)
     except ClientError:
-        logger.critical(f'Thumbnail does not exist. key = {key}')
-        raise ParseError(f'Thumbnail does not exist. key = {key}')
+        message = f'Thumbnail does not exist. key = {key}'
+        logger.critical(message)
+        raise ParseError(message)
