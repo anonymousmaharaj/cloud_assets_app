@@ -153,10 +153,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
             logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
             return render(request, 'assets/share_file.html', context={'form': form})
 
+        shared_user = User.objects.filter(email=form.cleaned_data['email']).first()
+
+        if not shared_user:
+            messages.success(request, 'The File was shared successfully.')
+            return redirect('root_page')
+
         try:
             instance = models.SharedTable.objects.create(
                 file_id=file_id,
-                user=User.objects.get(email=form.cleaned_data['email']),
+                user=shared_user,
                 expired=form.cleaned_data['expired'],
             )
             instance.permissions.set(form.cleaned_data['permissions'])

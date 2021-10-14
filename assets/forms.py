@@ -54,9 +54,6 @@ class CreateShareForm(forms.Form):
         if self.cleaned_data['email'] == self.user.email:
             raise forms.ValidationError('Cannot share with yourself.')
 
-        if not User.objects.filter(email=self.cleaned_data['email']).exists():
-            raise forms.ValidationError('User with this email does not exist')
-
         return self.cleaned_data['email']
 
     def clean_expired(self):
