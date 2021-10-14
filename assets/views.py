@@ -140,7 +140,7 @@ def user_upload_file(request):
 def create_folder(request):
     """View for create new folder."""
     if request.method == 'POST':
-        form = forms.CreateFolderForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
             new_folder_title = request.POST.get('title', None)
@@ -207,7 +207,7 @@ def create_folder(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
     elif request.method == 'GET':
-        form = forms.CreateFolderForm()
+        form = forms.InputNameForm()
         parent_folder = request.GET.get('folder')
         context = {'form': form,
                    'parent_folder': parent_folder}
@@ -481,9 +481,9 @@ def move_file(request):
 def rename_file(request):
     """View for rename file."""
     if request.method == 'POST':
-        form = forms.RenameFileForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('new_title', None)
+            new_title = request.POST.get('title', None)
             file_id = request.GET.get('file', None)
 
             if (new_title is None or
@@ -551,7 +551,7 @@ def rename_file(request):
                 ))
 
     elif request.method == 'GET':
-        form = forms.RenameFileForm()
+        form = forms.InputNameForm()
         context = {'form': form}
         return render(request,
                       'assets/rename_file.html',
