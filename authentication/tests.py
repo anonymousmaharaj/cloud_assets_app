@@ -30,7 +30,8 @@ class TestAuthApp(TestCase):
             'username': 'new_register',
             'email': 'newregistertest@test.com',
             'password1': 'VeryStrongPSWDFo0Test!',
-            'password2': 'VeryStrongPSWDFo0Test!'
+            'password2': 'VeryStrongPSWDFo0Test!',
+            'invite_code': 'Xhgurr432kda'
         }
 
         response = self.client.post(reverse('register'), data=data,
