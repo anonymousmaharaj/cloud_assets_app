@@ -112,9 +112,6 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
 
     def validate_email(self, data):
         """Validate email field for user exists and sharing with yourself."""
-        if not User.objects.filter(email=data).exists():
-            raise serializers.ValidationError({'detail': 'User is not exists.'})
-
         if self.context['request'].user == User.objects.filter(email=data).first():
             raise serializers.ValidationError({'detail': 'Cannot share with yourself.'})
 
