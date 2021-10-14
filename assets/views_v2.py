@@ -380,6 +380,8 @@ class ShareListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         """Filter objects by user."""
+        queries.delete_expired_shares()
+        now = timezone.now()
         return models.SharedTable.objects.filter(
             file_id__in=[file.id for file in self.request.user.files.all()],
             created_at__lt=F('expired')

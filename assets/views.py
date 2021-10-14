@@ -39,6 +39,8 @@ def show_page(request):
     folder_obj = get_object_or_404(models.Folder,
                                    pk=folder_id) if folder_id else None
 
+    queries.delete_expired_shares()
+
     rows = queries.get_assets_list(folder_id, request.user.pk)
     shared_rows = models.SharedTable.objects.filter(user=request.user,
                                                     created_at__lt=F('expired'))
