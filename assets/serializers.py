@@ -89,12 +89,12 @@ class FolderListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Folder
-        fields = ('title', 'parent')
-        read_only_fields = ('owner',)
+        fields = ('title', 'parent', 'uuid')
+        read_only_fields = ('owner', 'uuid')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def create(self, validated_data):
         """Override this method to validate exist folder."""
