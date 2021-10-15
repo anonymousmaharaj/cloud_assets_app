@@ -74,7 +74,7 @@ class MoveFileForm(forms.Form):
         user = kwargs.pop('user')
         super(MoveFileForm, self).__init__(*args, **kwargs)
         folders = models.Folder.objects.filter(owner=user)
-        folders = [(str(i.pk), i.title) for i in folders]
+        folders = [(str(i.uuid), i.title) for i in folders]
         folders.append(('None', 'Root'))
         self.fields['new_folder'].choices = folders
 
