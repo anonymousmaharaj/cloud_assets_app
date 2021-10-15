@@ -335,6 +335,7 @@ class FolderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     queryset = models.Folder.objects.all()
     permission_classes = (permissions.IsObjectOwner, IsAuthenticated)
     serializer_class = serializers.FolderRetrieveUpdateSerializer
+    lookup_field = 'uuid'
 
 
 class FolderListCreateView(generics.ListCreateAPIView):
