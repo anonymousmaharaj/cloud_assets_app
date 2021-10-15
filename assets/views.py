@@ -352,11 +352,11 @@ def move_file(request):
     if request.method == 'POST':
         form = forms.MoveFileForm(request.POST, user=request.user)
         if form.is_valid():
-            new_folder = request.POST.get('new_folder', None)
-            file_id = request.GET.get('file', None)
+            new_folder = form.cleaned_data.get('new_folder', None)
+            uuid = request.GET.get('file', None)
 
             if (new_folder is None or
-                    file_id is None):
+                    uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -365,28 +365,19 @@ def move_file(request):
 
             if new_folder == 'None':
                 new_folder = None
-            file_id_status = validators.validate_file_id(file_id)
 
-            if not file_id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
-            file_status = validators.validate_file_id(file_id)
             folder_exist_status = validators.validate_parent_folder(new_folder)
             file_permission_status = validators.validate_file_permission(
                 request.user,
-                file_id
+                uuid
             )
-            file_exist_status = validators.validate_exist_file(request.user, file_id)
+            file_exist_status = validators.validate_exist_file(request.user, uuid)
             params_status = validators.validate_get_params(dict(request.GET))
 
             if file_exist_status and folder_exist_status:
-                file = models.File.objects.get(pk=file_id)
+                file = models.File.objects.filter(relative_key__contains=uuid).first()
                 if new_folder is not None:
-                    new_folder = models.Folder.objects.get(pk=new_folder)
+                    new_folder = models.Folder.objects.filter(uuid=new_folder).first()
                 file_name = file.title
                 file_exist_in_folder = validators.validate_exist_file_in_folder(
                     file_name=file_name,
@@ -398,7 +389,7 @@ def move_file(request):
             if new_folder is not None:
                 folder_permission_status = validators.validate_folder_permission(
                     request.user,
-                    new_folder.pk
+                    new_folder.uuid
                 )
             else:
                 folder_permission_status = True
@@ -410,8 +401,7 @@ def move_file(request):
                         template_name='assets/errors/403_error_page.html'
                     ))
 
-            if (not file_status or
-                    not folder_exist_status or
+            if (not folder_exist_status or
                     not file_exist_status or
                     not params_status):
                 return http.HttpResponseBadRequest(
@@ -420,10 +410,10 @@ def move_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
             old_folder = file.folder
-            queries.move_file(new_folder, file_id)
+            queries.move_file(new_folder, uuid)
             messages.success(request, 'The file was successfully moved. ')
             if old_folder is not None:
-                return redirect(f'/?folder={old_folder.pk}')
+                return redirect(f'/?folder={old_folder.uuid}')
             else:
                 return redirect('root_page')
 
