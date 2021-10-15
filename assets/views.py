@@ -139,7 +139,7 @@ def create_folder(request):
         form = forms.InputNameForm(request.POST)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
-            new_folder_title = request.POST.get('title', None)
+            new_folder_title = form.cleaned_data.get('title', None)
 
             if new_folder_title is None:
                 return http.HttpResponseBadRequest(
@@ -153,20 +153,8 @@ def create_folder(request):
             if parent_folder == '':
                 parent_folder = None
 
-            id_status = validators.validate_id_for_folder(
-                parent_folder)
-
-            if not id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
             params_status = validators.validate_get_params(
                 dict(request.GET))
-            name_status = validators.validate_new_name(
-                new_folder_title)
             folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
             parent_folder_exist_status = validators.validate_exist_current_folder(parent_folder)
@@ -182,18 +170,18 @@ def create_folder(request):
 
             if (not parent_folder_exist_status or
                     not params_status or
-                    not name_status or
                     not folder_exist_status):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
+            parent_folder_instance = models.Folder.objects.filter(uuid=parent_folder).first()
 
-            queries.create_folder(request.user, new_folder_title, parent_folder)
+            queries.create_folder(request.user, new_folder_title, parent_folder_instance)
             messages.success(request, 'The folder was created.')
-            if parent_folder is not None:
-                return redirect(f'/?folder={parent_folder}')
+            if parent_folder_instance is not None:
+                return redirect(f'/?folder={parent_folder_instance.uuid}')
             else:
                 return redirect('root_page')
         else:
