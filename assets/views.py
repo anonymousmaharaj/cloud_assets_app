@@ -206,16 +206,16 @@ def create_folder(request):
 def download_file(request):
     """View for download file."""
     if request.method == 'GET':
-        uuid = request.GET.get('file')
+        file_uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            uuid
+            file_uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            uuid
+            file_uuid
         )
 
         if not validate_permission_status:
@@ -239,7 +239,7 @@ def download_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        download_url = s3.get_url(uuid)
+        download_url = s3.get_url(file_uuid)
 
         return redirect(download_url)
     else:
@@ -250,16 +250,16 @@ def download_file(request):
 def delete_file(request):
     """View for delete file."""
     if request.method == 'GET':
-        uuid = request.GET.get('file')
+        file_uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            uuid
+            file_uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            uuid
+            file_uuid
         )
 
         if not validate_permission_status:
@@ -283,12 +283,12 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        file_obj = models.File.objects.filter(relative_key__contains=uuid).first()
+        file_obj = models.File.objects.filter(relative_key__contains=file_uuid).first()
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
-        if s3.delete_key(uuid):
-            queries.delete_shared_table(uuid)
-            queries.delete_file(uuid)
+        if s3.delete_key(file_uuid):
+            queries.delete_shared_table(file_uuid)
+            queries.delete_file(file_uuid)
             messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:
                 return redirect(f'/?folder={folder_id.uuid}')
@@ -353,10 +353,10 @@ def move_file(request):
         form = forms.MoveFileForm(request.POST, user=request.user)
         if form.is_valid():
             new_folder = form.cleaned_data.get('new_folder', None)
-            uuid = request.GET.get('file', None)
+            file_uuid = request.GET.get('file', None)
 
             if (new_folder is None or
-                    uuid is None):
+                    file_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -369,13 +369,13 @@ def move_file(request):
             folder_exist_status = validators.validate_parent_folder(new_folder)
             file_permission_status = validators.validate_file_permission(
                 request.user,
-                uuid
+                file_uuid
             )
-            file_exist_status = validators.validate_exist_file(request.user, uuid)
+            file_exist_status = validators.validate_exist_file(request.user, file_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
 
             if file_exist_status and folder_exist_status:
-                file = models.File.objects.filter(relative_key__contains=uuid).first()
+                file = models.File.objects.filter(relative_key__contains=file_uuid).first()
                 if new_folder is not None:
                     new_folder = models.Folder.objects.filter(uuid=new_folder).first()
                 file_name = file.title
@@ -410,7 +410,7 @@ def move_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
             old_folder = file.folder
-            queries.move_file(new_folder, uuid)
+            queries.move_file(new_folder, file_uuid)
             messages.success(request, 'The file was successfully moved. ')
             if old_folder is not None:
                 return redirect(f'/?folder={old_folder.uuid}')
