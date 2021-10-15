@@ -2,6 +2,7 @@
 import bleach
 from django.contrib.auth.models import User
 from django.core import exceptions
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -33,20 +34,25 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
 class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
+    folder_uuid = serializers.CharField(max_length=255, required=False, allow_null=True)
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder')
-        read_only_fields = ('id',)
+        fields = ('title', 'folder_uuid')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override this method to validate editable fields."""
         instance.title = validated_data.get('title', instance.title)
-        instance.folder = validated_data.get('folder', instance.folder)
+        folder = validated_data.get('folder_uuid', instance.folder)
+
+        if isinstance(folder, str):
+            folder = get_object_or_404(models.Folder, uuid=folder)
+
+        instance.folder = folder
         try:
             instance.clean()
         except exceptions.ValidationError as error:
