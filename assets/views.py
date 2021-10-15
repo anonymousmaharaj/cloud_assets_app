@@ -250,24 +250,16 @@ def download_file(request):
 def delete_file(request):
     """View for delete file."""
     if request.method == 'GET':
-        file_id = request.GET.get('file')
-
-        validate_id_status = validators.validate_file_id(file_id)
-        if not validate_id_status:
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+        uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id
+            uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            file_id
+            uuid
         )
 
         if not validate_permission_status:
@@ -291,15 +283,15 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        file_obj = models.File.objects.get(pk=file_id)
+        file_obj = models.File.objects.filter(relative_key__contains=uuid).first()
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
-        if s3.delete_key(file_id):
-            queries.delete_shared_table(file_id)
-            queries.delete_file(file_id)
+        if s3.delete_key(uuid):
+            queries.delete_shared_table(uuid)
+            queries.delete_file(uuid)
             messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:
-                return redirect(f'/?folder={folder_id}')
+                return redirect(f'/?folder={folder_id.uuid}')
             else:
                 return redirect('root_page')
         else:
