@@ -358,49 +358,6 @@ class FolderListCreateView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class FileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    """View for rename file's endpoint."""
-
-    queryset = models.File.objects.all()
-    permission_classes = (permissions.IsObjectOwner, IsAuthenticated)
-    serializer_class = serializers.FileRetrieveUpdateDestroySerializer
-
-    def perform_update(self, serializer):
-        serializer.is_valid(raise_exception=True)
-        folder = serializer.validated_data.get('folder')
-        if folder is not None:
-            if not self.request.user.folders.filter(pk=folder.pk):
-                raise PermissionDenied(detail='You do not have permission to perform this action.')
-
-
-class FileListCreateView(generics.ListCreateAPIView):
-    """Generic APIView for List and Create files."""
-
-    permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.FileListCreateSerializer
-
-    def get_queryset(self):
-        """Filter objects by user."""
-        return models.File.objects.filter(owner=self.request.user)
-
-    def perform_create(self, serializer):
-        """Override this method to save additional fields."""
-        serializer.is_valid(raise_exception=True)
-        folder = serializer.validated_data.get('folder')
-        if folder is not None:
-            if not self.request.user.folders.filter(pk=folder.pk):
-                raise PermissionDenied(detail='You do not have permission to perform this action.')
-
-        rk = create_file_relative_key(self.request.user.pk)
-        extension = os.path.splitext(serializer.validated_data.get('title'))[1]
-        size = serializer.validated_data.get('size')
-
-        serializer.save(owner=self.request.user,
-                        relative_key=rk,
-                        extension=extension,
-                        size=size)
-
-
 class ShareListCreateView(generics.ListCreateAPIView):
     """Create and list for ShareTable."""
 
