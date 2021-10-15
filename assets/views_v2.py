@@ -269,21 +269,21 @@ class RenameFolderView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, folder_id: int):
+    def get(self, request, uuid):
         """Return the form related to the Folder model.
 
         @param request: default django request.
-        @param folder_id: model.Folder primary key
+        @param uuid: model.Folder uuid
         @return: HTTPResponse
         """
-        folder = models.Folder.objects.filter(pk=folder_id).first()
+        folder = models.Folder.objects.filter(uuid=uuid).first()
         if not folder:
-            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not folder.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {folder_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -292,7 +292,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
             request,
             'assets/rename_folder.html',
             context={'form': forms.RenameFolderForm(
-                instance=models.Folder.objects.filter(pk=folder_id).first())}
+                instance=models.Folder.objects.filter(uuid=uuid).first())}
         )
 
     def post(self, request, folder_id: int):
@@ -303,7 +303,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         @return: HTTPResponse
         """
         #
-        folder = models.Folder.objects.filter(pk=folder_id).first()
+        folder = models.Folder.objects.filter(uuid=folder_id).first()
         if not folder:
             logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
             return http.HttpResponseNotFound(
@@ -326,7 +326,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         except IntegrityError as e:
             logger.exception(f'[{request.user.username}] {str(e)} ')
 
-        return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')
+        return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.uuid}')
 
 
 class FolderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
