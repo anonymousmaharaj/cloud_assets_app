@@ -201,41 +201,41 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id):
+    def get(self, request, uuid):
         """Create empty form."""
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name=models.Permissions.READ_ONLY).exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - uuid: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
         return render(
             request,
             'assets/rename_file.html',
-            context={'form': forms.RenameFileForm()}
+            context={'form': forms.InputNameForm()}
         )
 
-    def post(self, request, file_id):
+    def post(self, request, uuid):
         """Rename file."""
-        file = get_object_or_404(models.File, pk=file_id)
-
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
                 permissions__name=models.Permissions.RENAME_ONLY).exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - uuid: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
 
-        form = forms.RenameFileForm(request.POST)
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
+
+        form = forms.InputNameForm(request.POST)
         if not form.is_valid():
             logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
             return render(request, 'assets/rename_file.html', context={'form': form})
 
-        file.title = form.cleaned_data['new_title']
+        file.title = form.cleaned_data['title']
         file.save()
         return redirect('root_page')
 
