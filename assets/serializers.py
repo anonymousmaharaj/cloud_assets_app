@@ -13,12 +13,12 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Folder
-        fields = ('id', 'title',)
-        read_only_fields = ('id',)
+        fields = ('title', 'parent', 'uuid')
+        read_only_fields = ('uuid',)
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override this method to validate editable fields."""
