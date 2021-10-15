@@ -191,3 +191,28 @@ class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SharedTable
         fields = ('id', 'file', 'expired', 'permissions',)
+
+
+class NewFileListCreateSerializer(serializers.ModelSerializer):
+    """Serializer for Get, Update and Delete methods."""
+
+    class Meta:
+        model = models.File
+        fields = ('title', 'folder', 'extension', 'size')
+        read_only_fields = ('relative_key',)
+        extra_kwargs = {'title': {'required': True},
+                        'size': {'required': True}}
+
+    def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
+        return bleach.clean(data, tags=[], strip=True)
+
+    def create(self, validated_data):
+        """Override this method to validate exist file."""
+
+        if models.File.objects.filter(title=validated_data.get('title'),
+                                      owner=validated_data.get('owner'),
+                                      folder=validated_data.get('folder')).first():
+            raise serializers.ValidationError({'detail': 'Current file already exists.'})
+        instance = models.File.objects.create(**validated_data)
+        return instance
