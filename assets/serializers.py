@@ -121,7 +121,7 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         if self.context['request'].user == User.objects.filter(email=data).first():
             raise serializers.ValidationError({'detail': 'Cannot share with yourself.'})
 
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def validate_expired(self, data):
         if data < timezone.now():
@@ -170,7 +170,7 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'title': {'required': True}}
 
     def validate_title(self, data):
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override update method for rename file."""
