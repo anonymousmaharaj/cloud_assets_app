@@ -75,28 +75,20 @@ def user_upload_file(request):
 
             file_name = uploaded_file.name
 
-            id_status = validators.validate_id_for_folder(parent_folder)
-
-            if not id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
+            parent_folder_instance = models.Folder.objects.filter(uuid=parent_folder).first()
             file_exist = validators.validate_exist_file_in_folder(
                 file_name,
                 user=request.user,
-                folder=parent_folder)
+                folder=parent_folder_instance)
 
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
             folder_exists = models.Folder.objects.filter(
-                pk=parent_folder).exists()
+                uuid=parent_folder).exists()
 
             if folder_exists:
-                parent_folder = models.Folder.objects.get(pk=parent_folder)
+                parent_folder = models.Folder.objects.get(uuid=parent_folder)
             else:
                 parent_folder = None
 
@@ -115,7 +107,7 @@ def user_upload_file(request):
                 messages.success(request, 'The file was uploaded.')
 
                 if parent_folder is not None:
-                    return redirect(f'/?folder={parent_folder.pk}')
+                    return redirect(f'/?folder={parent_folder.uuid}')
                 else:
                     return redirect('root_page')
             else:
