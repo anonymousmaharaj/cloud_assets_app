@@ -245,19 +245,19 @@ class DeleteShareFileView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id):
+    def get(self, request, uuid):
         """Delete a shared file."""
-        file = get_object_or_404(models.File, pk=file_id)
 
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
                 permissions__name=models.Permissions.DELETE_ONLY).exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
-        share = models.SharedTable.objects.filter(file_id=file_id, user=request.user.pk).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
+        share = models.SharedTable.objects.filter(file__relative_key__contains=uuid, user=request.user.pk).first()
 
         share.delete()
         file.delete()
