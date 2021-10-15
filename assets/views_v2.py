@@ -413,25 +413,25 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
     authentication_classes = (BasicAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, pk):
+    def get(self, request, uuid):
         """Get download URL for a shared file."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
                 permissions__name=models.Permissions.READ_ONLY).exists():
             raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        return Response({'url': s3.get_url(pk)})
+        return Response({'url': s3.get_url(uuid)})
 
-    def put(self, request, pk):
+    def put(self, request, uuid):
         """Rename file if permission is okay."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
                 permissions__name=models.Permissions.RENAME_ONLY).exists():
             raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        instance = models.File.objects.get(pk=pk)
+        instance = models.File.objects.filter(relative_key__contains=uuid).first()
         serializer = serializers.ShareFileUpdateSerializer(instance=instance,
                                                            data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -439,16 +439,16 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
 
         return Response({'title': instance.title})
 
-    def delete(self, request, pk):
+    def delete(self, request, uuid):
         """Delete file if permission is okay."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
                 permissions__name=models.Permissions.DELETE_ONLY).exists():
             raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        queries.delete_shared_table(pk)
-        queries.delete_file(pk)
+        queries.delete_shared_table(uuid)
+        queries.delete_file(uuid)
 
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
 
