@@ -306,21 +306,14 @@ def delete_file(request):
 def delete_folder(request):
     """Delete folder with all files inside."""
     if request.method == 'GET':
-        folder_id = request.GET.get('folder')
-        id_status = validators.validate_id_for_folder(folder_id)
-        if not id_status:
-            return http.HttpResponseBadRequest(content=render(
-                request=request,
-                template_name='assets/errors/400_error_page.html'
-            ))
+        folder_uuid = request.GET.get('folder')
 
         params_status = validators.validate_get_params(
             dict(request.GET))
-        folder_id_status = validators.validate_folder_id(folder_id)
-        folder_exist_status = validators.validate_parent_folder(folder_id)
+        folder_exist_status = validators.validate_parent_folder(folder_uuid)
         folder_permission_status = validators.validate_folder_permission(
             request.user,
-            folder_id
+            folder_uuid
         )
 
         if not folder_permission_status:
@@ -332,20 +325,19 @@ def delete_folder(request):
 
         if (not params_status or
                 not folder_exist_status or
-                not params_status or
-                not folder_id_status):
+                not params_status):
             return http.HttpResponseBadRequest(content=render(
                 request=request,
                 template_name='assets/errors/400_error_page.html'
             ))
 
-        folder_obj = models.Folder.objects.get(pk=folder_id)
+        folder_obj = models.Folder.objects.get(uuid=folder_uuid)
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
-        s3.delete_recursive(folder_id)
+        s3.delete_recursive(folder_uuid)
         messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
-            return redirect(f'/?folder={parent_id}')
+            return redirect(f'/?folder={parent_id.uuid}')
         else:
             return redirect('root_page')
 
