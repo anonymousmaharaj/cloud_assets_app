@@ -526,3 +526,78 @@ class CreateThumbnailView(APIView):
 
         logger.info(f'{request.data.get("thumbnail_key")} was created.')
         return Response({'detail': 'success'}, status=status.HTTP_200_OK)
+
+
+class FileRetrieveUpdateDestroyView(APIView):
+    """View for retrieve update and destroy file obj."""
+
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, uuid):
+        """Get download URL for a shared file."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        return Response({'url': s3.get_url(uuid)})
+
+    def put(self, request, uuid):
+        """Rename file if permission is okay."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        instance = models.File.objects.filter(relative_key__contains=uuid).first()
+
+        serializer = serializers.FileRetrieveUpdateDestroySerializer(instance=instance,
+                                                                     data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'title': instance.title})
+
+    def delete(self, request, uuid):
+        """Delete file if permission is okay."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        s3.delete_key(uuid)
+        queries.delete_shared_table(uuid)
+        queries.delete_file(uuid)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FileListCreateView(APIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        files = models.File.objects.filter(owner=request.user)
+        for file in files:
+            file.relative_key = file.relative_key.split('/')[-1]
+        serializer = serializers.NewFileListCreateSerializer(files, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = serializers.NewFileListCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        folder = serializer.validated_data.get('folder')
+        if folder is not None:
+            if not self.request.user.folders.filter(pk=folder.pk):
+                raise PermissionDenied(detail='You do not have permission to perform this action.')
+
+        rk = create_file_relative_key(self.request.user.pk)
+        extension = os.path.splitext(serializer.validated_data.get('title'))[1]
+        size = serializer.validated_data.get('size')
+
+        serializer.save(owner=self.request.user,
+                        relative_key=rk,
+                        extension=extension,
+                        size=size)
+
+        return Response(data=serializer.data, status=HTTP_201_CREATED)
