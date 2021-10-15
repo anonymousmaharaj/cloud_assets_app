@@ -206,24 +206,16 @@ def create_folder(request):
 def download_file(request):
     """View for download file."""
     if request.method == 'GET':
-        file_id = request.GET.get('file')
-
-        validate_id_status = validators.validate_file_id(file_id)
-        if not validate_id_status:
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+        uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id
+            uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            file_id
+            uuid
         )
 
         if not validate_permission_status:
@@ -247,7 +239,7 @@ def download_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        download_url = s3.get_url(file_id)
+        download_url = s3.get_url(uuid)
 
         return redirect(download_url)
     else:
