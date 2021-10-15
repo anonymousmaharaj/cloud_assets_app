@@ -26,7 +26,7 @@ urlpatterns = [
     path('delete-folder/', views.delete_folder, name='delete_folder'),
     path('move/', views.move_file, name='move_file'),
     path('rename-file/', views.rename_file, name='rename_file'),
-    path('assets/folder/<str:folder_id>/rename/', views_v2.RenameFolderView.as_view()),
+    path('assets/folder/<str:uuid>/rename/', views_v2.RenameFolderView.as_view()),
     path('assets/files/<str:uuid>/share/', views_v2.CreateShareView.as_view()),
     path('assets/files/share/', views_v2.ListShareView.as_view(), name='share-list'),
     path('assets/files/share/<int:share_id>/update/', views_v2.UpdateShareView.as_view()),
