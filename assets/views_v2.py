@@ -112,16 +112,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id: int):
+    def get(self, request, uuid):
         """Create empty form."""
-        file = models.File.objects.filter(pk=file_id).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
         if not file:
-            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {file_id}')
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - UUID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not file.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -132,16 +132,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
             context={'form': forms.CreateShareForm()}
         )
 
-    def post(self, request, file_id: int):
+    def post(self, request, uuid):
         """Create ShareTable."""
-        file = models.File.objects.filter(pk=file_id).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
         if not file:
-            logger.warning(f'[{request.user.username}] attempt to share file is not exist. - ID: {file_id}')
+            logger.warning(f'[{request.user.username}] try to share file is not exist. - UUID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not file.owner == request.user:
-            logger.warning(f'[{request.user.username}] attempt to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -161,7 +161,7 @@ class CreateShareView(LoginRequiredMixin, views.View):
 
         try:
             instance = models.SharedTable.objects.create(
-                file_id=file_id,
+                file_id=file.pk,
                 user=shared_user,
                 expired=form.cleaned_data['expired'],
             )
