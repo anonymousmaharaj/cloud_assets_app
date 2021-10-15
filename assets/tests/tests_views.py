@@ -151,7 +151,7 @@ class TestRenameFolderView(TestCase):
 
     def test_request_get(self):
         """Test rename_folder view's request with GET method."""
-        response = self.client.get(f'/assets/folder/{self.folder.pk}/rename/', follow=True)
+        response = self.client.get(f'/assets/folder/{self.folder.uuid}/rename/', follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'assets/rename_folder.html')
 
@@ -184,7 +184,7 @@ class TestRenameFileView(TestCase):
 
         )
         self.get_params = {
-            'file': self.file.pk
+            'file': self.file.relative_key
         }
 
     def test_request_get(self):
@@ -199,7 +199,7 @@ class TestRenameFileView(TestCase):
             'title': 'test.jpg',
         }
         form = forms.InputNameForm(data=form_data)
-        response = self.client.post(f'/rename-file/?file={self.file.pk}', data=form_data,
+        response = self.client.post(f'/rename-file/?file={self.file.relative_key}', data=form_data,
                                     follow=True)
         self.assertTrue(form.is_valid())
         self.assertEqual(response.status_code, 200)
@@ -222,6 +222,7 @@ class TestMoveFileView(TestCase):
             title='test_folder',
             owner=self.user,
             parent=None,
+            uuid=uuid.uuid4()
         )
         self.file = models.File.objects.create(
             title='test_file.txt',
@@ -232,7 +233,7 @@ class TestMoveFileView(TestCase):
             size=1024
         )
         self.get_params = {
-            'file': self.file.pk
+            'file': self.file.relative_key
         }
 
     def test_request_get(self):
@@ -244,10 +245,10 @@ class TestMoveFileView(TestCase):
     def test_move_view_with_form(self):
         """Test move_file view's request with form."""
         form_data = {
-            'new_folder': self.folder.pk
+            'new_folder': self.folder.uuid
         }
         form = forms.MoveFileForm(data=form_data, user=self.user)
-        response = self.client.post(f'/move/?file={self.file.pk}', data=form_data,
+        response = self.client.post(f'/move/?file={self.file.relative_key}', data=form_data,
                                     follow=True)
         self.assertTrue(form.is_valid())
         self.assertEqual(response.status_code, 200)
@@ -276,7 +277,7 @@ class TestDeleteFileView(TestCase):
             size=1024
         )
         self.get_params = {
-            'file': self.file.pk
+            'file': self.file.relative_key
         }
 
     @patch('assets.aws.s3.delete_key')
@@ -285,6 +286,7 @@ class TestDeleteFileView(TestCase):
         s3_api_call.return_value = True
         response = self.client.get(reverse('delete_file'), follow=True, data=self.get_params)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(models.File.objects.count(), 0)
 
 
 class TestDeleteFolderView(TestCase):
@@ -305,12 +307,14 @@ class TestDeleteFolderView(TestCase):
             title='test_folder',
             owner=self.user,
             parent=None,
+            uuid=uuid.uuid4()
         )
         self.get_params = {
-            'folder': self.folder.pk
+            'folder': self.folder.uuid
         }
 
     def test_request_get(self):
         """Test move_file view's request with GET method."""
         response = self.client.get(reverse('delete_folder'), follow=True, data=self.get_params)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(models.Folder.objects.count(), 0)
