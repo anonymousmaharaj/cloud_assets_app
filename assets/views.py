@@ -506,11 +506,11 @@ def rename_folder(request):
     if request.method == 'POST':
         form = forms.RenameFolderForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('new_title', None)
-            folder_id = request.GET.get('folder', None)
+            new_title = form.cleaned_data.get('new_title', None)
+            folder_uuid = request.GET.get('folder', None)
 
             if (new_title is None or
-                    folder_id is None):
+                    folder_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -519,23 +519,15 @@ def rename_folder(request):
 
             new_title = new_title.strip()
 
-            folder_id_status = validators.validate_folder_id(folder_id)
-            if not folder_id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
             folder_permission_status = validators.validate_folder_permission(
                 request.user,
-                folder_id
+                folder_uuid
             )
             folder_exist_status = validators.validate_exist_current_folder(
-                folder_id)
+                folder_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
             new_folder_exist = validators.validate_exist_folder_new_title(
-                folder_id,
+                folder_uuid,
                 new_title,
                 request.user
             )
@@ -558,8 +550,8 @@ def rename_folder(request):
                         request=request,
                         template_name='assets/errors/403_error_page.html'
                     ))
-            current_folder = models.Folder.objects.get(pk=folder_id)
-            queries.rename_folder(folder_id, new_title)
+            current_folder = models.Folder.objects.get(pk=folder_uuid)
+            queries.rename_folder(folder_uuid, new_title)
             messages.success(request, 'The folder was successfully renamed. ')
             if current_folder.parent is not None:
                 return redirect(f'/?folder={current_folder.parent.pk}')
