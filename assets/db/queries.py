@@ -9,7 +9,7 @@ from assets import models
 def get_assets_list(folder_id, user_pk):
     """Raw SQL query for receiving assets of folder or a root page."""
     query = """
-        SELECT id, title, folder_id AS parent_id, False AS is_folder, SPLIT_PART(relative_key, '/', 4)::text as uuid
+        SELECT id, title, folder_id AS parent_id, False AS is_folder, SPLIT_PART(relative_key, '/', 4) as uuid
           FROM assets_file
          WHERE (folder_id = (select id
                    from assets_folder
@@ -63,9 +63,9 @@ def move_file(new_folder, uuid):
     file.save()
 
 
-def rename_file(uuid, new_title):
+def rename_file(file_uuid, new_title):
     """Rename file in DB."""
-    file = models.File.objects.filter(relative_key__contains=uuid).first()
+    file = models.File.objects.filter(relative_key__contains=file_uuid).first()
     file.title = new_title
     file.save()
 
