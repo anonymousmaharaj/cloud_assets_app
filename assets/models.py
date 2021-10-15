@@ -22,6 +22,7 @@ class File(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                               on_delete=models.PROTECT,
                               related_name='files')
+    # TODO: Divide relative_key.
     relative_key = models.CharField(max_length=255)
     shared = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                     through='SharedTable')
