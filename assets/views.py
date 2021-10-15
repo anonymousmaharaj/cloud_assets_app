@@ -433,19 +433,11 @@ def rename_file(request):
     if request.method == 'POST':
         form = forms.InputNameForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('title', None)
-            file_id = request.GET.get('file', None)
+            new_title = form.cleaned_data.get('title', None)
+            file_uuid = request.GET.get('file', None)
 
             if (new_title is None or
-                    file_id is None):
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
-            file_id_status = validators.validate_file_id(file_id)
-            if not file_id_status:
+                    file_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -453,16 +445,14 @@ def rename_file(request):
                     ))
 
             new_title = new_title.strip()
-            file_status = validators.validate_file_id(file_id)
             file_permission_status = validators.validate_file_permission(
                 request.user,
-                file_id
+                file_uuid
             )
-            file_exist_status = validators.validate_exist_file(request.user, file_id)
+            file_exist_status = validators.validate_exist_file(request.user, file_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
 
             if (not file_exist_status or
-                    not file_status or
                     not params_status):
                 return http.HttpResponseBadRequest(
                     content=render(
@@ -478,7 +468,7 @@ def rename_file(request):
                     ))
 
             if file_exist_status:
-                file = models.File.objects.get(pk=file_id)
+                file = models.File.objects.filter(relative_key__contains=file_uuid).first()
                 folder = file.folder
                 file_exist_in_folder = validators.validate_exist_file_in_folder(new_title,
                                                                                 request.user,
@@ -486,10 +476,10 @@ def rename_file(request):
                 if file_exist_in_folder:
                     return http.HttpResponse('File already exists in folder. Change name.')
 
-            queries.rename_file(file_id, new_title)
+            queries.rename_file(file_uuid, new_title)
             messages.success(request, 'The file was successfully renamed. ')
             if folder is not None:
-                return redirect(f'/?folder={folder.pk}')
+                return redirect(f'/?folder={folder.uuid}')
             else:
                 return redirect('root_page')
 
