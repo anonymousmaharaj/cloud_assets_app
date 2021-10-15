@@ -66,12 +66,12 @@ class FileListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder', 'size', 'extension')
-        read_only_fields = ('id', 'size', 'extension')
+        fields = ('title', 'folder', 'relative_key', 'size', 'extension')
+        read_only_fields = ('relative_key', 'size')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def create(self, validated_data):
         """Override this method to validate exist file."""
