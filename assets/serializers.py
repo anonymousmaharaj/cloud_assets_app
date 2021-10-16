@@ -61,35 +61,13 @@ class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
         return instance
 
 
-class FileListCreateSerializer(serializers.ModelSerializer):
-    """Serializer for List and Create methods."""
-
-    class Meta:
-        model = models.File
-        fields = ('title', 'folder', 'relative_key', 'size', 'extension')
-        read_only_fields = ('relative_key', 'size')
-
-    def validate_title(self, data):
-        """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True)
-
-    def create(self, validated_data):
-        """Override this method to validate exist file."""
-        # TODO: add upload file (data)
-        if models.File.objects.filter(title=validated_data.get('title'),
-                                      owner=validated_data.get('owner'),
-                                      folder=validated_data.get('folder')).first():
-            raise serializers.ValidationError({'detail': 'Current file already exists.'})
-        instance = models.File.objects.create(**validated_data)
-        return instance
-
-
 class FolderListCreateSerializer(serializers.ModelSerializer):
     """Serializer for List and Create methods."""
+    parent = serializers.CharField(max_length=255)
 
     class Meta:
         model = models.Folder
-        fields = ('title', 'parent', 'uuid')
+        fields = ('title', 'uuid', 'parent')
         read_only_fields = ('owner', 'uuid')
 
     def validate_title(self, data):
@@ -100,9 +78,14 @@ class FolderListCreateSerializer(serializers.ModelSerializer):
         """Override this method to validate exist folder."""
         if models.Folder.objects.filter(title=validated_data.get('title'),
                                         owner=validated_data.get('owner'),
-                                        parent=validated_data.get('parent')).first():
+                                        parent__uuid=validated_data.get('parent')).first():
             raise serializers.ValidationError({'detail': 'Current folder already exists.'})
-        instance = models.Folder.objects.create(**validated_data)
+
+        parent = models.Folder.objects.filter(uuid=validated_data.get('parent')).first()
+
+        instance = models.Folder.objects.create(title=validated_data.get('title'),
+                                                owner=validated_data.get('owner'),
+                                                parent=parent)
         return instance
 
 
@@ -179,7 +162,7 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ThumbnailSerializer(serializers.Serializer):
+class CreateThumbnailSerializer(serializers.Serializer):
     """Serializer for thumbnail."""
 
     thumbnail_key = serializers.CharField(required=True)
@@ -195,6 +178,7 @@ class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
 
 class FileListCreateSerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
+    folder = serializers.CharField(max_length=255)
 
     class Meta:
         model = models.File
@@ -212,7 +196,16 @@ class FileListCreateSerializer(serializers.ModelSerializer):
 
         if models.File.objects.filter(title=validated_data.get('title'),
                                       owner=validated_data.get('owner'),
-                                      folder=validated_data.get('folder')).first():
+                                      folder__uuid=validated_data.get('folder')).exists():
             raise serializers.ValidationError({'detail': 'Current file already exists.'})
-        instance = models.File.objects.create(**validated_data)
+
+        folder = models.Folder.objects.filter(uuid=validated_data.get('folder')).first()
+
+        instance = models.File.objects.create(title=validated_data.get('title'),
+                                              owner=validated_data.get('owner'),
+                                              folder=folder,
+                                              extension=validated_data.get('extension'),
+                                              size=validated_data.get('size'),
+                                              relative_key=validated_data.get('relative_key'))
+
         return instance

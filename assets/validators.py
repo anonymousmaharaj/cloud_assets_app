@@ -1,4 +1,7 @@
 """Any validators for Assets app."""
+import uuid
+
+from rest_framework.exceptions import ParseError
 
 from assets import models
 
@@ -84,3 +87,10 @@ def validate_exist_current_folder(folder_uuid):
         return folders_list
     else:
         return True
+
+
+def validate_uuid(value):
+    try:
+        uuid.UUID(value, version=4)
+    except ValueError:
+        raise ParseError(detail="Invalid UUID")

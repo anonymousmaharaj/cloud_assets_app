@@ -15,7 +15,6 @@ from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins
-from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
@@ -25,6 +24,7 @@ from assets import forms
 from assets import models
 from assets import permissions
 from assets import serializers
+from assets import validators
 from assets.aws import s3
 from assets.db import queries
 from assets.utils import create_file_relative_key
@@ -296,22 +296,22 @@ class RenameFolderView(LoginRequiredMixin, views.View):
                 instance=models.Folder.objects.filter(uuid=uuid).first())}
         )
 
-    def post(self, request, folder_id: int):
+    def post(self, request, uuid):
         """Rename the folder or returns an error.
 
         @param request: default django request.
-        @param folder_id: model.Folder primary key
+        @param uuid: model.Folder primary key
         @return: HTTPResponse
         """
         #
-        folder = models.Folder.objects.filter(uuid=folder_id).first()
+        folder = models.Folder.objects.filter(uuid=uuid).first()
         if not folder:
-            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not folder.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {folder_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -344,7 +344,7 @@ class FolderListCreateView(generics.ListCreateAPIView):
 
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.FolderListCreateSerializer
-    parser_classes = (JSONParser,)
+    lookup_field = 'uuid'
 
     def get_queryset(self):
         """Filter objects by user."""
@@ -355,8 +355,10 @@ class FolderListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         parent = serializer.validated_data.get('parent')
         if parent is not None:
-            if not self.request.user.folders.filter(pk=parent.pk):
+            validators.validate_uuid(parent)
+            if not self.request.user.folders.filter(uuid=parent):
                 raise PermissionDenied(detail='You do not have permission to perform this action.')
+
         serializer.save(owner=self.request.user)
 
 
@@ -472,7 +474,7 @@ class CreateThumbnailView(APIView):
     # TODO: Add lambda permissions.
     def post(self, request, uuid):
         """Write a thumbnail in DB."""
-        serializer = serializers.ThumbnailSerializer(data=request.data)
+        serializer = serializers.CreateThumbnailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         thumbnail_key = serializer.validated_data['thumbnail_key']
@@ -538,15 +540,16 @@ class FileListCreateView(APIView):
         files = models.File.objects.filter(owner=request.user)
         for file in files:
             file.relative_key = file.relative_key.split('/')[-1]
-        serializer = serializers.NewFileListCreateSerializer(files, many=True)
+        serializer = serializers.FileListCreateSerializer(files, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = serializers.NewFileListCreateSerializer(data=request.data)
+        serializer = serializers.FileListCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        folder = serializer.validated_data.get('folder')
-        if folder is not None:
-            if not self.request.user.folders.filter(pk=folder.pk):
+        folder_uuid = serializer.validated_data.get('folder')
+        if folder_uuid is not None:
+            validators.validate_uuid(folder_uuid)
+            if not self.request.user.folders.filter(uuid=folder_uuid):
                 raise PermissionDenied(detail='You do not have permission to perform this action.')
 
         rk = create_file_relative_key(self.request.user.pk)
