@@ -12,4 +12,3 @@ A cloud-based application for managing your Assets
 - Gunicorn 20.1.0
 - DRF-YASG 1.20.0
 - Pytest-Django 4.4.0
-- 
