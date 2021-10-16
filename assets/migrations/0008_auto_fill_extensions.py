@@ -11,11 +11,18 @@ def get_extensions(apps, schema_editor):
         row.save(update_fields=['extension'])
 
 
+def reverse_extensions(apps, schema_editor):
+    model = apps.get_model('assets', 'File')
+    for row in model.objects.all():
+        row.extension = ''
+        row.save(update_fields=['extension'])
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ('assets', '0007_add_file_fields'),
     ]
 
     operations = [
-        migrations.RunPython(get_extensions, reverse_code=migrations.RunPython.noop)
+        migrations.RunPython(get_extensions, reverse_code=reverse_extensions)
     ]

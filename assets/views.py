@@ -39,6 +39,8 @@ def show_page(request):
     folder_obj = get_object_or_404(models.Folder,
                                    pk=folder_id) if folder_id else None
 
+    queries.delete_expired_shares()
+
     rows = queries.get_assets_list(folder_id, request.user.pk)
     shared_rows = models.SharedTable.objects.filter(user=request.user,
                                                     created_at__lt=F('expired'))
@@ -140,7 +142,7 @@ def user_upload_file(request):
 def create_folder(request):
     """View for create new folder."""
     if request.method == 'POST':
-        form = forms.CreateFolderForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
             new_folder_title = request.POST.get('title', None)
@@ -207,7 +209,7 @@ def create_folder(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
     elif request.method == 'GET':
-        form = forms.CreateFolderForm()
+        form = forms.InputNameForm()
         parent_folder = request.GET.get('folder')
         context = {'form': form,
                    'parent_folder': parent_folder}
@@ -374,7 +376,7 @@ def delete_folder(request):
         folder_obj = models.Folder.objects.get(pk=folder_id)
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
-        s3.delete_folders(folder_id)
+        s3.delete_recursive(folder_id)
         messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
             return redirect(f'/?folder={parent_id}')
@@ -481,9 +483,9 @@ def move_file(request):
 def rename_file(request):
     """View for rename file."""
     if request.method == 'POST':
-        form = forms.RenameFileForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('new_title', None)
+            new_title = request.POST.get('title', None)
             file_id = request.GET.get('file', None)
 
             if (new_title is None or
@@ -551,7 +553,7 @@ def rename_file(request):
                 ))
 
     elif request.method == 'GET':
-        form = forms.RenameFileForm()
+        form = forms.InputNameForm()
         context = {'form': form}
         return render(request,
                       'assets/rename_file.html',

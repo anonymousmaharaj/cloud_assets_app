@@ -1,6 +1,7 @@
 """Queries and related objects."""
 
 from django.db import connection
+from django.utils import timezone
 
 from assets import models
 
@@ -97,3 +98,8 @@ def create_folder(user, title, parent_id):
 def delete_shared_table(file_id):
     """Delete share table."""
     models.SharedTable.objects.filter(file_id=file_id).delete()
+
+
+def delete_expired_shares():
+    now = timezone.now()
+    models.SharedTable.objects.filter(expired__lt=now).delete()

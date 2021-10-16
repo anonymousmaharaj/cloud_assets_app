@@ -124,7 +124,7 @@ class TestCreateFolderView(TestCase):
         form_data = {
             'title': 'test-folder',
         }
-        form = forms.CreateFolderForm(data=form_data)
+        form = forms.InputNameForm(data=form_data)
         response = self.client.post('/create-folder/', data=form_data, follow=True)
         self.assertTrue(form.is_valid())
         self.assertEqual(response.status_code, 200)
@@ -196,9 +196,9 @@ class TestRenameFileView(TestCase):
     def test_rename_folder_view_with_form(self):
         """Test rename_file view's request with form."""
         form_data = {
-            'new_title': 'test.jpg',
+            'title': 'test.jpg',
         }
-        form = forms.RenameFileForm(data=form_data)
+        form = forms.InputNameForm(data=form_data)
         response = self.client.post(f'/rename-file/?file={self.file.pk}', data=form_data,
                                     follow=True)
         self.assertTrue(form.is_valid())

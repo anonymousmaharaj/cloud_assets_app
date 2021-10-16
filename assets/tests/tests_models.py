@@ -30,8 +30,7 @@ class TestFileModel(TestCase):
     @property
     def get_current_id(self):
         """Auxiliary func for tests."""
-        file_exist = models.File.objects.exists()
-        if file_exist:
+        if models.File.objects.exists():
             files = models.File.objects.filter()
             return files[0]
 

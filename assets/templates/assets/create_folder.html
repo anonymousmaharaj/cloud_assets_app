@@ -1,18 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="p-2">
-        <form method="post">
-            {% csrf_token %}
-            <input name="title" maxlength="255" type="text" required placeholder="Input folder name...">
-            <button class="btn btn-outline-primary btn-sm" type="submit">Create folder!</button>
-        </form>
-        <br>
-        {% if parent_folder %}
-            <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
-        {% else %}
-            <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
-        {% endif %}
+     <div class="container-fluid">
+        <div class="row">
+            <div class="col col-3">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="p-1"></div>
+                    <input class="form-control" name="new_title" type="text" required placeholder="Input new title...">
+                    <div class="p-1"></div>
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Create</button>
+                </form>
+                <div class="p-1"></div>
+                {% if parent_folder %}
+                    <a class="btn btn-outline-primary btn-sm" href="/?folder={{ parent_folder }}">Back</a>
+                {% else %}
+                    <a class="btn btn-outline-primary btn-sm" href="{% url 'root_page' %}">Back</a>
+                {% endif %}
+            </div>
+            <div class="col col-9"></div>
+        </div>
     </div>
 {% endblock %}
 

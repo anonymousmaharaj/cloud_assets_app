@@ -79,11 +79,6 @@ def delete_key(file_id):
         return True
 
 
-def delete_folders(folder_id):
-    """Delete folder with files from S3."""
-    delete_recursive(folder_id)
-
-
 def delete_recursive(folder_id):
     """Find all children and delete them."""
     folders = models.Folder.objects.filter(parent=folder_id).exists()
@@ -107,5 +102,6 @@ def check_exists(key):
     try:
         s3.head_object(Bucket=bucket.name, Key=key)
     except ClientError:
-        logger.critical(f'Thumbnail does not exist. key = {key}')
-        raise ParseError(f'Thumbnail does not exist. key = {key}')
+        message = f'Thumbnail does not exist. key = {key}'
+        logger.critical(message)
+        raise ParseError(message)

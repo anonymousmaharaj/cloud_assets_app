@@ -97,12 +97,14 @@ class Folder(models.Model):
         """Check exist folder with same title."""
         if Folder.objects.filter(title=self.title, owner=self.owner, parent=self.parent).first():
             raise ValidationError('Current folder already exists.')
-        if self == self.parent:
-            raise ValidationError('Cannot move folder in itself.')
 
 
 class Permissions(models.Model):
     """Permissions for ShareTable."""
+
+    READ_ONLY = 'read_only'
+    RENAME_ONLY = 'rename_only'
+    DELETE_ONLY = 'delete_only'
 
     title = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
