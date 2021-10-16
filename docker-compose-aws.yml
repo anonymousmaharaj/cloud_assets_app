@@ -23,6 +23,10 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ASSETS_VIEW_LOG_FILE=${ASSETS_VIEW_LOG_FILE}
+      - REQUESTS_LOG_FILE=${REQUESTS_LOG_FILE}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - INVITE_CODE=${INVITE_CODE}
 
   nginx:
     image: "anonymousmaharaj/django-nginx"
