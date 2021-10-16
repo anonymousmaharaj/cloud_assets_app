@@ -73,7 +73,7 @@ class FolderCreateTests(APITestCase):
         self.client.login(username='test_user', password='test')
         payload = {
             'title': 'Folder',
-            'id': 10,
+            'id': 22,
             'owner': 2,
         }
         response = self.client.post(
@@ -84,7 +84,7 @@ class FolderCreateTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Folder.objects.filter(title='Folder').first().owner, self.test_user)
-        self.assertNotEqual(Folder.objects.filter(title='Folder').first().pk, 10)
+        self.assertNotEqual(Folder.objects.filter(title='Folder').first().pk, 22)
 
     def test_custom_permission_failed(self):
         self.client.login(username='test_user', password='test')
