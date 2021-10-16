@@ -193,12 +193,12 @@ class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
         fields = ('id', 'file', 'expired', 'permissions',)
 
 
-class NewFileListCreateSerializer(serializers.ModelSerializer):
+class FileListCreateSerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
 
     class Meta:
         model = models.File
-        fields = ('title', 'folder', 'extension', 'size')
+        fields = ('title', 'folder', 'extension', 'size', 'relative_key')
         read_only_fields = ('relative_key',)
         extra_kwargs = {'title': {'required': True},
                         'size': {'required': True}}
