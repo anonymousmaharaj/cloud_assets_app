@@ -2,6 +2,7 @@
 import bleach
 from django.contrib.auth.models import User
 from django.core import exceptions
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -13,12 +14,12 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Folder
-        fields = ('id', 'title',)
-        read_only_fields = ('id',)
+        fields = ('title', 'parent', 'uuid')
+        read_only_fields = ('uuid',)
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override this method to validate editable fields."""
@@ -33,20 +34,25 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
 class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
+    folder_uuid = serializers.CharField(max_length=255, required=False, allow_null=True)
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder')
-        read_only_fields = ('id',)
+        fields = ('title', 'folder_uuid')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override this method to validate editable fields."""
         instance.title = validated_data.get('title', instance.title)
-        instance.folder = validated_data.get('folder', instance.folder)
+        folder = validated_data.get('folder_uuid', instance.folder)
+
+        if isinstance(folder, str):
+            folder = get_object_or_404(models.Folder, uuid=folder)
+
+        instance.folder = folder
         try:
             instance.clean()
         except exceptions.ValidationError as error:
@@ -60,12 +66,12 @@ class FileListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.File
-        fields = ('id', 'title', 'folder', 'size', 'extension')
-        read_only_fields = ('id', 'size', 'extension')
+        fields = ('title', 'folder', 'relative_key', 'size', 'extension')
+        read_only_fields = ('relative_key', 'size')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def create(self, validated_data):
         """Override this method to validate exist file."""
@@ -83,12 +89,12 @@ class FolderListCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Folder
-        fields = ('title', 'parent')
-        read_only_fields = ('owner',)
+        fields = ('title', 'parent', 'uuid')
+        read_only_fields = ('owner', 'uuid')
 
     def validate_title(self, data):
         """Sanitize the field from HTML tags."""
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def create(self, validated_data):
         """Override this method to validate exist folder."""
@@ -115,7 +121,7 @@ class ShareListCreateSerializer(serializers.ModelSerializer):
         if self.context['request'].user == User.objects.filter(email=data).first():
             raise serializers.ValidationError({'detail': 'Cannot share with yourself.'})
 
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def validate_expired(self, data):
         if data < timezone.now():
@@ -164,7 +170,7 @@ class ShareFileUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'title': {'required': True}}
 
     def validate_title(self, data):
-        return bleach.clean(data, tags=[], strip=True, strip_comments=True)
+        return bleach.clean(data, tags=[], strip=True)
 
     def update(self, instance, validated_data):
         """Override update method for rename file."""
@@ -185,3 +191,28 @@ class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SharedTable
         fields = ('id', 'file', 'expired', 'permissions',)
+
+
+class NewFileListCreateSerializer(serializers.ModelSerializer):
+    """Serializer for Get, Update and Delete methods."""
+
+    class Meta:
+        model = models.File
+        fields = ('title', 'folder', 'extension', 'size')
+        read_only_fields = ('relative_key',)
+        extra_kwargs = {'title': {'required': True},
+                        'size': {'required': True}}
+
+    def validate_title(self, data):
+        """Sanitize the field from HTML tags."""
+        return bleach.clean(data, tags=[], strip=True)
+
+    def create(self, validated_data):
+        """Override this method to validate exist file."""
+
+        if models.File.objects.filter(title=validated_data.get('title'),
+                                      owner=validated_data.get('owner'),
+                                      folder=validated_data.get('folder')).first():
+            raise serializers.ValidationError({'detail': 'Current file already exists.'})
+        instance = models.File.objects.create(**validated_data)
+        return instance

@@ -9,15 +9,19 @@ from assets import models
 def get_assets_list(folder_id, user_pk):
     """Raw SQL query for receiving assets of folder or a root page."""
     query = """
-        SELECT id, title, folder_id AS parent_id, False AS is_folder
+        SELECT id, title, folder_id AS parent_id, False AS is_folder, SPLIT_PART(relative_key, '/', 4) as uuid
           FROM assets_file
-         WHERE (folder_id = %(folder_id)s
+         WHERE (folder_id = (select id
+                   from assets_folder
+                   where uuid::text = %(folder_id)s)
             OR (%(folder_id)s IS NULL and folder_id IS NULL))
            AND owner_id = %(owner)s
          UNION
-        SELECT id, title, parent_id AS parent_id, True AS is_folder
+        SELECT id, title, parent_id AS parent_id, True AS is_folder, uuid::text as uuid
           FROM assets_folder
-         WHERE (parent_id = %(folder_id)s
+         WHERE (parent_id = (select id
+                   from assets_folder
+                   where uuid::text = %(folder_id)s)
             OR (%(folder_id)s IS NULL and parent_id IS NULL))
             AND owner_id = %(owner)s
       ORDER BY is_folder DESC"""
@@ -52,16 +56,16 @@ def get_personal_folders(user):
     return models.Folder.objects.filter(owner=user)
 
 
-def move_file(new_folder, file_id):
+def move_file(new_folder, uuid):
     """Move file in DB."""
-    file = models.File.objects.get(pk=file_id)
+    file = models.File.objects.filter(relative_key__contains=uuid).first()
     file.folder = new_folder
     file.save()
 
 
-def rename_file(file_id, new_title):
+def rename_file(file_uuid, new_title):
     """Rename file in DB."""
-    file = models.File.objects.get(pk=file_id)
+    file = models.File.objects.filter(relative_key__contains=file_uuid).first()
     file.title = new_title
     file.save()
 
@@ -83,21 +87,21 @@ def create_file(file_name, user, folder, key, size, extension):
                 extension=extension).save()
 
 
-def delete_file(file_id):
+def delete_file(uuid):
     """Delete file form DB."""
-    models.File.objects.get(pk=file_id).delete()
+    models.File.objects.filter(relative_key__contains=uuid).delete()
 
 
-def create_folder(user, title, parent_id):
+def create_folder(user, title, parent):
     """Create new folder in DB."""
-    models.Folder(title=title,
-                  owner=user,
-                  parent_id=parent_id).save()
+    models.Folder.objects.create(title=title,
+                                 owner=user,
+                                 parent=parent).save()
 
 
-def delete_shared_table(file_id):
+def delete_shared_table(uuid):
     """Delete share table."""
-    models.SharedTable.objects.filter(file_id=file_id).delete()
+    models.SharedTable.objects.filter(file__relative_key__contains=uuid).delete()
 
 
 def delete_expired_shares():

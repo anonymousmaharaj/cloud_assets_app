@@ -52,14 +52,14 @@ class TestFileModel(TestCase):
         """Test rename file."""
         unique_name = str(uuid.uuid4())
         current_file = models.File.objects.get(pk=self.get_current_id.pk)
-        queries.rename_file(file_id=current_file.pk, new_title=unique_name)
-        current_file = models.File.objects.get(pk=self.get_current_id.pk)
+        queries.rename_file(file_uuid=current_file.relative_key, new_title=unique_name)
+        current_file = models.File.objects.get(relative_key=current_file.relative_key)
         self.assertEqual(current_file.title, unique_name)
 
     def test_rename_file_with_exist_name(self):
         """Test rename file with exist name."""
         current_file = models.File.objects.get(pk=self.get_current_id.pk)
-        queries.rename_file(file_id=current_file.pk, new_title=current_file.title)
+        queries.rename_file(file_uuid=current_file.pk, new_title=current_file.title)
         current_file = models.File.objects.get(pk=self.get_current_id.pk)
         try:
             self.assertEqual(current_file.title, current_file.title)
@@ -69,7 +69,7 @@ class TestFileModel(TestCase):
     def test_delete_file(self):
         """Test delete file."""
         current_file = models.File.objects.get(pk=self.get_current_id.pk)
-        queries.delete_file(file_id=current_file.pk)
+        queries.delete_file(current_file.relative_key.split('/')[-1])
         file_exist = models.File.objects.filter(pk=current_file.pk).exists()
         self.assertFalse(file_exist)
 

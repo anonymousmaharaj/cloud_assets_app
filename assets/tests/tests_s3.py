@@ -48,5 +48,5 @@ class TestS3Methods(TestCase):
         """Test delete file from bucket func."""
         mock_bucket.return_value = Mock()
         api_call.return_value = True
-        response = s3.delete_key(self.file.pk)
+        response = s3.delete_key(self.file.relative_key)
         self.assertTrue(response)

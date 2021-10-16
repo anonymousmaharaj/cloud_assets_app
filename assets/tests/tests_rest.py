@@ -1,6 +1,7 @@
 from tempfile import TemporaryFile
 from unittest.mock import patch
 
+import uuid
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
@@ -135,18 +136,21 @@ class FolderListTests(APITestCase):
             title='test_folder_1',
             owner=self.test_user,
             parent=None,
+            uuid=uuid.uuid4()
         )
 
         self.folder_2 = Folder.objects.create(
             title='test_folder_2',
             owner=self.test_user,
             parent=None,
+            uuid=uuid.uuid4()
         )
 
         self.folder_3 = Folder.objects.create(
             title='test_folder_3',
             owner=self.test_user_2,
             parent=None,
+            uuid=uuid.uuid4()
         )
 
     def test_folder_list_wrong_user_login(self):
@@ -162,8 +166,10 @@ class FolderListTests(APITestCase):
         self.client.login(username='test_user', password='test')
         response = self.client.get(reverse('assets-api-folders'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue({'title': 'test_folder_1', 'parent': None} in response.json())
-        self.assertTrue({'title': 'test_folder_3', 'parent': None} not in response.json())
+        self.assertTrue(
+            {'title': 'test_folder_1', 'parent': None, 'uuid': str(self.folder_1.uuid)} in response.json())
+        self.assertTrue(
+            {'title': 'test_folder_3', 'parent': None, 'uuid': str(self.folder_3.uuid)} not in response.json())
 
 
 class ShareListTests(APITestCase):
@@ -225,7 +231,7 @@ class ShareListTests(APITestCase):
         self.shared_table.permissions.set([self.perm_read, self.perm_rename])
 
     def test_share_list_count(self):
-        self.client.login(username='test_user', password='test')
+        self.client.force_authenticate(self.test_user)
         response = self.client.get(reverse('assets-share-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -514,7 +520,8 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             owner=self.test_user,
             folder=None,
             extension='.txt',
-            size=1024
+            size=1024,
+            relative_key=uuid.uuid4()
         )
 
         self.file_2 = File.objects.create(
@@ -522,7 +529,8 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             owner=self.test_user,
             folder=None,
             extension='.txt',
-            size=1024
+            size=1024,
+            relative_key=uuid.uuid4()
         )
 
         self.perm_rename = Permissions.objects.create(
@@ -555,7 +563,7 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             'title': '<script>newtitle</script>',
         }
         response = self.client.put(
-            f'/api/assets/files/shared-with-me/{self.file_2.pk}/',
+            f'/api/assets/files/shared-with-me/{self.file_2.relative_key}/',
             payload,
             format='json'
         )
@@ -568,7 +576,7 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             'title': '<script>newtitle</script>',
         }
         response = self.client.put(
-            f'/api/assets/files/shared-with-me/{self.file_1.pk}/',
+            f'/api/assets/files/shared-with-me/{self.file_1.relative_key}/',
             payload,
             format='json'
         )
@@ -580,7 +588,7 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
             'title': '<script>newtitle</script>',
         }
         response = self.client.put(
-            f'/api/assets/files/shared-with-me/{self.file_2.pk}/',
+            f'/api/assets/files/shared-with-me/{self.file_2.relative_key}/',
             payload,
             format='json'
         )
@@ -589,22 +597,22 @@ class ShareFileRetrieveUpdateDestroyTests(APITestCase):
     def test_update_file_wrong_fields(self):
         self.client.force_authenticate(user=self.test_user_2)
         response = self.client.put(
-            f'/api/assets/files/shared-with-me/{self.file_2.pk}/', {}, format='json')
+            f'/api/assets/files/shared-with-me/{self.file_2.relative_key}/', {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_file_correct(self):
         self.client.force_authenticate(user=self.test_user_2)
-        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.pk}/')
+        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.relative_key}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_delete_file_wrong_user(self):
         self.client.force_authenticate(user=self.test_user)
-        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.pk}/')
+        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.relative_key}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_file_no_delete_permissions(self):
         self.client.force_authenticate(user=self.test_user)
-        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.pk}/')
+        response = self.client.delete(f'/api/assets/files/shared-with-me/{self.file_1.relative_key}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
