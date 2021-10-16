@@ -15,6 +15,7 @@ from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
@@ -344,6 +345,7 @@ class FolderListCreateView(generics.ListCreateAPIView):
 
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.FolderListCreateSerializer
+    parser_classes = (JSONParser,)
     lookup_field = 'uuid'
 
     def get_queryset(self):
