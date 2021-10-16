@@ -63,7 +63,7 @@ class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
 
 class FolderListCreateSerializer(serializers.ModelSerializer):
     """Serializer for List and Create methods."""
-    parent = serializers.CharField(max_length=255)
+    parent = serializers.CharField(max_length=255, required=False)
 
     class Meta:
         model = models.Folder
@@ -178,7 +178,7 @@ class RetrieveListSharedFilesSerializer(serializers.ModelSerializer):
 
 class FileListCreateSerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
-    folder = serializers.CharField(max_length=255)
+    folder = serializers.CharField(max_length=255, required=False)
 
     class Meta:
         model = models.File

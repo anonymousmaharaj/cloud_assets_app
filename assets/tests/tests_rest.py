@@ -26,6 +26,7 @@ class FolderCreateTests(APITestCase):
             title='test_folder_1',
             owner=self.test_user_2,
             parent=None,
+            uuid=uuid.uuid4()
         )
 
     def test_create_folder_success(self):
@@ -90,7 +91,7 @@ class FolderCreateTests(APITestCase):
         self.client.login(username='test_user', password='test')
         payload = {
             'title': 'Folder',
-            'parent': self.folder.pk
+            'parent': self.folder.uuid
 
         }
         response = self.client.post(
