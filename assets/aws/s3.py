@@ -65,7 +65,7 @@ def delete_key(file_id):
     bucket = create_bucket()
     file_obj = models.File.objects.filter(relative_key__contains=file_id).first()
     key = file_obj.relative_key
-    # TODO: Fix validation.
+
     delete_dict = {
         'Objects': [
             {'Key': key}
