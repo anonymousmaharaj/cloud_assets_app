@@ -1,4 +1,10 @@
+import logging
 import os
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -103,3 +109,53 @@ STATICFILES_DIRS = [
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'assets.utils.custom_exception_handler',
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'formatter': {
+            'format': '{asctime} [{levelname}] [{lineno}] [{module}] {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'assets_views': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.getenv('ASSETS_VIEW_LOG_FILE'),
+            'formatter': 'formatter',
+            'encoding': 'utf-8'
+        },
+        'requests': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.getenv('REQUESTS_LOG_FILE'),
+            'formatter': 'formatter',
+            'encoding': 'utf-8'
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['requests'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'assets': {
+            'handlers': ['assets_views'],
+            'level': 'WARNING',
+            'propagate': True,
+        }
+    },
+}
+
+sentry_logging = LoggingIntegration(
+    level=logging.INFO
+)
+
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+)
