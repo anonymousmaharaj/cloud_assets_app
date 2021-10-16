@@ -5,6 +5,7 @@ from django.db import migrations
 
 def create_permissions(apps, schema_editor):
     Permissions = apps.get_model('assets', 'Permissions')
+    Permissions.objects.all().delete()
     permission = [
         Permissions(title='Download', name='read_only'),
         Permissions(title='Rename', name='rename_only'),

@@ -107,3 +107,22 @@ def check_exists(key):
         message = f'Thumbnail does not exist. key = {key}'
         logger.critical(message)
         raise ParseError(message)
+
+
+def get_thumbnails(files, user):
+    bucket = create_bucket()
+
+    for file in files:
+        if not file['is_folder']:
+            params = {
+                'Bucket': bucket.name,
+                'Key': f'thumbnails/users/{user.pk}/assets/{file.get("uuid")}'
+            }
+            response = bucket.meta.client.generate_presigned_url('get_object',
+                                                                 Params=params,
+                                                                 ExpiresIn=3600)
+            file['thumbnail'] = response
+
+    return files
+
+
