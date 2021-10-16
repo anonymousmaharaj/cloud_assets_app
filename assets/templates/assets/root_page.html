@@ -9,15 +9,15 @@
                     {% if folder_obj.parent_id is None %}
                         <a href="{% url 'root_page' %}" class="btn btn-primary btn-sm">Back</a>
                     {% else %}
-                        <a href="?folder={{ folder_obj.parent_id }}" class="btn btn-primary btn-sm">Back</a>
+                        <a href="?folder={{ folder_obj.parent.uuid }}" class="btn btn-primary btn-sm">Back</a>
                     {% endif %}
 
                 {% endif %}
                 <a class="btn btn-primary btn-sm" aria-current="page"
-                   href="upload_file/?folder={{ folder_obj.pk }}">Upload
+                   href="upload_file/?folder={{ folder_obj.uuid }}">Upload
                     File in
                     current directory</a>
-                <a class="btn btn-primary btn-sm" href="create-folder/?folder={{ folder_obj.pk }}">Create new
+                <a class="btn btn-primary btn-sm" href="create-folder/?folder={{ folder_obj.uuid }}">Create new
                     folder</a>
             </div>
         </div>
@@ -28,11 +28,11 @@
                     {% for row in rows %}
                         {% if row.is_folder %}
                             <li class="list-group-item p-2">
-                                <a href="/?folder={{ row.id }}"><i class="material-icons">folder_open</i>{{ row.title }}
+                                <a href="/?folder={{ row.uuid }}"><i class="material-icons">folder_open</i>{{ row.title }}
                                 </a>
-                                <a href="delete-folder/?folder={{ row.id }}" class="btn btn-outline-primary btn-sm"
+                                <a href="delete-folder/?folder={{ row.uuid }}" class="btn btn-outline-primary btn-sm"
                                    onclick='return confirm("Are you sure?")'>Delete</a>
-                                <a href="assets/folder/{{ row.id }}/rename/"
+                                <a href="assets/folder/{{ row.uuid }}/rename/"
                                    class="btn btn-outline-primary btn-sm">Rename</a>
                             </li>
 
@@ -40,14 +40,14 @@
                         {% else %}
                             <li class="list-group-item p-2">
                                 <span class="material-icons">description</span>{{ row.title }}
-                                <a href="download/?file={{ row.id }}"
+                                <a href="download/?file={{ row.uuid }}"
                                    class="btn btn-outline-primary btn-sm">Download</a>
-                                <a href="delete/?file={{ row.id }}" onclick='return confirm("Are you sure?")'
+                                <a href="delete/?file={{ row.uuid }}" onclick='return confirm("Are you sure?")'
                                    class="btn btn-outline-primary btn-sm">Delete</a>
-                                <a href="move/?file={{ row.id }}" class="btn btn-outline-primary btn-sm">Move</a>
-                                <a href="rename-file/?file={{ row.id }}"
+                                <a href="move/?file={{ row.uuid }}" class="btn btn-outline-primary btn-sm">Move</a>
+                                <a href="rename-file/?file={{ row.uuid }}"
                                    class="btn btn-outline-primary btn-sm">Rename</a>
-                                <a href="assets/files/{{ row.id }}/share/"
+                                <a href="assets/files/{{ row.uuid }}/share/"
                                    class="btn btn-outline-primary btn-sm">Share</a>
                             </li>
 
@@ -71,13 +71,13 @@
                                 {{ shared_row.file.title }}
                                 {% for permission in shared_row.permissions.all %}
                                     {% if permission.name == 'read_only' %}
-                                        |      <a href="/assets/files/{{ shared_row.file.pk }}/share/download/"
+                                        |      <a href="/assets/files/{{shared_row.file.relative_key }}/share/download/"
                                                   class="btn btn-outline-primary btn-sm">{{ permission }}</a>
                                     {% elif permission.name == 'rename_only' %}
-                                        |     <a href="/assets/files/{{ shared_row.file.pk }}/share/rename/"
+                                        |     <a href="/assets/files/{{ shared_row.file.relative_key }}/share/rename/"
                                                  class="btn btn-outline-primary btn-sm">{{ permission }}</a>
                                     {% elif permission.name == 'delete_only' %}
-                                        |     <a href="/assets/files/{{ shared_row.file.pk }}/share/delete/"
+                                        |     <a href="/assets/files/{{ shared_row.file.relative_key }}/share/delete/"
                                                  onclick='return confirm("Are you sure?")'
                                                  class="btn btn-outline-primary btn-sm">{{ permission }}</a>
                                     {% endif %}

@@ -26,11 +26,11 @@ def create_bucket():
         name=settings.S3_BUCKET)
 
 
-def get_url(file_id):
+def get_url(uuid):
     """Get url for download file."""
     bucket = create_bucket()
 
-    file_obj = models.File.objects.get(pk=file_id)
+    file_obj = models.File.objects.filter(relative_key__contains=uuid).first()
     file_key = file_obj.relative_key
     params = {
         'Bucket': bucket.name,
@@ -63,7 +63,7 @@ def upload_file(file_name, key, extension, content_type):
 def delete_key(file_id):
     """Delete file from S3."""
     bucket = create_bucket()
-    file_obj = models.File.objects.get(pk=file_id)
+    file_obj = models.File.objects.filter(relative_key__contains=file_id).first()
     key = file_obj.relative_key
     # TODO: Fix validation.
     delete_dict = {
@@ -79,25 +79,22 @@ def delete_key(file_id):
         return True
 
 
-def delete_folders(folder_id):
-    """Delete folder with files from S3."""
-    delete_recursive(folder_id)
-
-
 def delete_recursive(folder_id):
     """Find all children and delete them."""
-    folders = models.Folder.objects.filter(parent=folder_id).exists()
-    files = models.File.objects.filter(folder=folder_id)
+    folders = models.Folder.objects.filter(parent__uuid=folder_id).exists()
+    files = models.File.objects.filter(folder__uuid=folder_id)
 
     for file in files:
-        delete_key(file.pk)
-        queries.delete_file(file.pk)
+        uuid = file.relative_key.split('/')[-1]
+        delete_key(uuid)
+        queries.delete_shared_table(uuid)
+        queries.delete_file(uuid)
 
     if folders:
-        folders_qs = models.Folder.objects.filter(parent=folder_id)
+        folders_qs = models.Folder.objects.filter(parent__uuid=folder_id)
         for folder in folders_qs:
-            delete_recursive(folder.pk)
-    models.Folder.objects.filter(pk=folder_id).delete()
+            delete_recursive(folder.uuid)
+    models.Folder.objects.get(uuid=folder_id).delete()
 
 
 def check_exists(key):
@@ -107,5 +104,6 @@ def check_exists(key):
     try:
         s3.head_object(Bucket=bucket.name, Key=key)
     except ClientError:
-        logger.critical(f'Thumbnail does not exist. key = {key}')
-        raise ParseError(f'Thumbnail does not exist. key = {key}')
+        message = f'Thumbnail does not exist. key = {key}'
+        logger.critical(message)
+        raise ParseError(message)

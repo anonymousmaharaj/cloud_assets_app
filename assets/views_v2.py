@@ -1,5 +1,6 @@
 """Views for assets app."""
 import logging
+import os
 
 from django import http, views
 from django.contrib import messages
@@ -8,13 +9,16 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.authentication import BasicAuthentication
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied
+from rest_framework import mixins
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.status import HTTP_201_CREATED
 from rest_framework.views import APIView
 
 from assets import forms
@@ -109,16 +113,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id: int):
+    def get(self, request, uuid):
         """Create empty form."""
-        file = models.File.objects.filter(pk=file_id).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
         if not file:
-            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {file_id}')
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - UUID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not file.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -129,16 +133,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
             context={'form': forms.CreateShareForm()}
         )
 
-    def post(self, request, file_id: int):
+    def post(self, request, uuid):
         """Create ShareTable."""
-        file = models.File.objects.filter(pk=file_id).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
         if not file:
-            logger.warning(f'[{request.user.username}] try to share file is not exist. - ID: {file_id}')
+            logger.warning(f'[{request.user.username}] try to share file is not exist. - UUID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not file.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -150,10 +154,16 @@ class CreateShareView(LoginRequiredMixin, views.View):
             logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
             return render(request, 'assets/share_file.html', context={'form': form})
 
+        shared_user = User.objects.filter(email=form.cleaned_data['email']).first()
+
+        if not shared_user:
+            messages.success(request, 'The File was shared successfully.')
+            return redirect('root_page')
+
         try:
             instance = models.SharedTable.objects.create(
-                file_id=file_id,
-                user=User.objects.get(email=form.cleaned_data['email']),
+                file_id=file.pk,
+                user=shared_user,
                 expired=form.cleaned_data['expired'],
             )
             instance.permissions.set(form.cleaned_data['permissions'])
@@ -172,17 +182,17 @@ class DownloadShareFileView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id):
+    def get(self, request, uuid):
         """Get a shared file."""
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='read_only').exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+                permissions__name=models.Permissions.READ_ONLY).exists():
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
-        download_url = s3.get_url(file_id)
+        download_url = s3.get_url(uuid)
 
         return redirect(download_url)
 
@@ -192,42 +202,41 @@ class RenameShareFileView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id):
+    def get(self, request, uuid):
         """Create empty form."""
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='rename_only').exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - uuid: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
         return render(
             request,
             'assets/rename_file.html',
-            context={'form': forms.RenameFileForm()}
+            context={'form': forms.InputNameForm()}
         )
 
-    def post(self, request, file_id):
+    def post(self, request, uuid):
         """Rename file."""
-        file = get_object_or_404(models.File, pk=file_id)
-
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='rename_only'
-        ).exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - uuid: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
 
-        form = forms.RenameFileForm(request.POST)
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
+
+        form = forms.InputNameForm(request.POST)
         if not form.is_valid():
             logger.warning(f'[{request.user.username}] send invalid form \n {form.errors}.')
             return render(request, 'assets/rename_file.html', context={'form': form})
 
-        file.title = form.cleaned_data['new_title']
+        file.title = form.cleaned_data['title']
         file.save()
         return redirect('root_page')
 
@@ -237,19 +246,19 @@ class DeleteShareFileView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, file_id):
+    def get(self, request, uuid):
         """Delete a shared file."""
-        file = get_object_or_404(models.File, pk=file_id)
 
         if not models.SharedTable.objects.filter(
-                file_id=file_id,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='delete_only').exists():
-            logger.warning(f'[{request.user.username}] try to get access to the denied file - ID: {file_id} .')
+                permissions__name=models.Permissions.DELETE_ONLY).exists():
+            logger.warning(f'[{request.user.username}] try to get access to the denied file - UUID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
-        share = models.SharedTable.objects.filter(file_id=file_id, user=request.user.pk).first()
+        file = models.File.objects.filter(relative_key__contains=uuid).first()
+        share = models.SharedTable.objects.filter(file__relative_key__contains=uuid, user=request.user.pk).first()
 
         share.delete()
         file.delete()
@@ -261,21 +270,21 @@ class RenameFolderView(LoginRequiredMixin, views.View):
 
     login_url = '/login/'
 
-    def get(self, request, folder_id: int):
+    def get(self, request, uuid):
         """Return the form related to the Folder model.
 
         @param request: default django request.
-        @param folder_id: model.Folder primary key
+        @param uuid: model.Folder uuid
         @return: HTTPResponse
         """
-        folder = models.Folder.objects.filter(pk=folder_id).first()
+        folder = models.Folder.objects.filter(uuid=uuid).first()
         if not folder:
-            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
+            logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {uuid}')
             return http.HttpResponseNotFound(
                 content=render(request=request, template_name='assets/errors/404_error_page.html')
             )
         if not folder.owner == request.user:
-            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {folder_id} .')
+            logger.warning(f'[{request.user.username}] try to get access to the denied folder - ID: {uuid} .')
             return http.HttpResponseForbidden(
                 content=render(request=request, template_name='assets/errors/403_error_page.html')
             )
@@ -284,7 +293,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
             request,
             'assets/rename_folder.html',
             context={'form': forms.RenameFolderForm(
-                instance=models.Folder.objects.filter(pk=folder_id).first())}
+                instance=models.Folder.objects.filter(uuid=uuid).first())}
         )
 
     def post(self, request, folder_id: int):
@@ -295,7 +304,7 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         @return: HTTPResponse
         """
         #
-        folder = models.Folder.objects.filter(pk=folder_id).first()
+        folder = models.Folder.objects.filter(uuid=folder_id).first()
         if not folder:
             logger.warning(f'[{request.user.username}] try to rename is not exist folder - ID: {folder_id}')
             return http.HttpResponseNotFound(
@@ -318,22 +327,22 @@ class RenameFolderView(LoginRequiredMixin, views.View):
         except IntegrityError as e:
             logger.exception(f'[{request.user.username}] {str(e)} ')
 
-        return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.pk}')
+        return redirect('root_page' if folder.parent is None else f'/folder={folder.parent.uuid}')
 
 
 class FolderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """View for rename folder's endpoint."""
 
     queryset = models.Folder.objects.all()
-    permission_classes = (permissions.IsObjectOwner, permissions.IsParentOwner, IsAuthenticated)
+    permission_classes = (permissions.IsObjectOwner, IsAuthenticated)
     serializer_class = serializers.FolderRetrieveUpdateSerializer
+    lookup_field = 'uuid'
 
 
 class FolderListCreateView(generics.ListCreateAPIView):
     """Generic APIView for List and Create folders."""
 
-    queryset = models.Folder.objects.all()
-    permission_classes = (permissions.IsParentOwner, IsAuthenticated)
+    permission_classes = (IsAuthenticated,)
     serializer_class = serializers.FolderListCreateSerializer
     parser_classes = (JSONParser,)
 
@@ -343,63 +352,60 @@ class FolderListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """Override this method to save additional fields."""
+        serializer.is_valid(raise_exception=True)
+        parent = serializer.validated_data.get('parent')
+        if parent is not None:
+            if not self.request.user.folders.filter(pk=parent.pk):
+                raise PermissionDenied(detail='You do not have permission to perform this action.')
         serializer.save(owner=self.request.user)
-
-
-class FileRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    """View for rename folder's endpoint."""
-
-    queryset = models.File.objects.all()
-    permission_classes = (permissions.IsObjectOwner, permissions.IsFolderOwner, IsAuthenticated)
-    serializer_class = serializers.FileRetrieveUpdateDestroySerializer
-
-
-class FileListCreateView(generics.ListCreateAPIView):
-    """Generic APIView for List and Create files."""
-
-    queryset = models.File.objects.all()
-    permission_classes = (permissions.IsFolderOwner, IsAuthenticated)
-    serializer_class = serializers.FileListCreateSerializer
-
-    def get_queryset(self):
-        """Filter objects by user."""
-        return models.File.objects.filter(owner=self.request.user)
-
-    def perform_create(self, serializer):
-        """Override this method to save additional fields."""
-        rk = create_file_relative_key(self.request.user.pk)
-        serializer.save(owner=self.request.user,
-                        relative_key=rk)
 
 
 class ShareListCreateView(generics.ListCreateAPIView):
     """Create and list for ShareTable."""
 
-    queryset = models.SharedTable.objects.all()
-    permission_classes = (permissions.IsShareOwner, permissions.IsSharingFileOwner, IsAuthenticated)
+    permission_classes = (IsAuthenticated,)
     serializer_class = serializers.ShareListCreateSerializer
 
     def get_queryset(self):
         """Filter objects by user."""
+        queries.delete_expired_shares()
+        now = timezone.now()
         return models.SharedTable.objects.filter(
-            file_id__in=[file.id for file in self.request.user.files.all()],
-            created_at__lt=F('expired')
+            file__owner=self.request.user,
+            expired__gt=now
         )
 
+    def create(self, request, *args, **kwargs):
+        """Override 'create' method to return 201 Created to exclude payload."""
+        super(ShareListCreateView, self).create(request, *args, **kwargs)
+        return Response(status=status.HTTP_201_CREATED)
 
-class ShareRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    def perform_create(self, serializer):
+        file = serializer.validated_data.get('file')
+        if not self.request.user.files.filter(pk=file.pk):
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
+
+        if not User.objects.filter(email=serializer.validated_data.get('email')).exists():
+            return
+
+        super(ShareListCreateView, self).perform_create(serializer)
+
+
+class ShareUpdateDestroyView(mixins.DestroyModelMixin, mixins.UpdateModelMixin, generics.GenericAPIView):
     """View for rename folder's endpoint."""
 
-    queryset = models.SharedTable.objects.all()
-    permission_classes = (permissions.IsShareOwner, IsAuthenticated)
-    serializer_class = serializers.ShareRetrieveUpdateDestroySerializer
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.ShareUpdateDestroySerializer
 
     def get_queryset(self):
         """Filter objects by user."""
-        return models.SharedTable.objects.filter(
-            file_id__in=[file.id for file in self.request.user.files.all()],
-            created_at__lt=F('expired')
-        )
+        return models.SharedTable.objects.filter(file__owner=self.request.user)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class SharedFileRetrieveUpdateDestroyView(APIView):
@@ -408,60 +414,148 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
     authentication_classes = (BasicAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, pk):
+    def get(self, request, uuid):
         """Get download URL for a shared file."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='read_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.READ_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        return Response({'url': s3.get_url(pk)})
+        return Response({'url': s3.get_url(uuid)})
 
-    def put(self, request, pk):
+    def put(self, request, uuid):
         """Rename file if permission is okay."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='rename_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.RENAME_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        # data = {'title': request.data.get('title')}
-        instance = models.File.objects.get(pk=pk)
+        instance = models.File.objects.filter(relative_key__contains=uuid).first()
         serializer = serializers.ShareFileUpdateSerializer(instance=instance,
                                                            data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response({'title': instance.title})
 
-    def delete(self, request, pk):
+    def delete(self, request, uuid):
         """Delete file if permission is okay."""
         if not models.SharedTable.objects.filter(
-                file_id=pk,
+                file__relative_key__contains=uuid,
                 user=request.user.pk,
-                permissions__name='delete_only').exists():
-            raise PermissionDenied(detail='forbidden')
+                permissions__name=models.Permissions.DELETE_ONLY).exists():
+            raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        queries.delete_shared_table(pk)
-        queries.delete_file(pk)
+        queries.delete_shared_table(uuid)
+        queries.delete_file(uuid)
 
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
-class GetThumbnailView(APIView):
+class ListSharedFilesView(generics.ListAPIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.RetrieveListSharedFilesSerializer
+
+    def get_queryset(self):
+        return models.SharedTable.objects.filter(
+            user=self.request.user,
+            created_at__lt=F('expired')
+        )
+
+
+class CreateThumbnailView(APIView):
     """Create thumbnail in db with aws lambda."""
 
+    # TODO: Add lambda permissions.
     def post(self, request, uuid):
         """Write a thumbnail in DB."""
-        s3.check_exists(request.data.get('thumbnail_key'))
-        instance = models.File.objects.filter(relative_key__contains=uuid).first()
+        serializer = serializers.ThumbnailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not instance:
-            raise ParseError(detail=f'File with {uuid} key does not exist.')
+        thumbnail_key = serializer.validated_data['thumbnail_key']
+        instance = get_object_or_404(models.File, relative_key__contains=uuid)
+        s3.check_exists(thumbnail_key)
 
-        serializer = serializers.ThumbnailSerializer(instance,
-                                                     data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        instance.thumbnail_key = thumbnail_key
+        instance.save()
+
         logger.info(f'{request.data.get("thumbnail_key")} was created.')
         return Response({'detail': 'success'}, status=status.HTTP_200_OK)
+
+
+class FileRetrieveUpdateDestroyView(APIView):
+    """View for retrieve update and destroy file obj."""
+
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, uuid):
+        """Get download URL for a shared file."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        return Response({'url': s3.get_url(uuid)})
+
+    def put(self, request, uuid):
+        """Rename file if permission is okay."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        instance = models.File.objects.filter(relative_key__contains=uuid).first()
+
+        serializer = serializers.FileRetrieveUpdateDestroySerializer(instance=instance,
+                                                                     data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'title': instance.title})
+
+    def delete(self, request, uuid):
+        """Delete file if permission is okay."""
+        if not models.File.objects.filter(
+                relative_key__contains=uuid,
+                owner=request.user.pk).exists():
+            raise PermissionDenied(detail='forbidden')
+
+        s3.delete_key(uuid)
+        queries.delete_shared_table(uuid)
+        queries.delete_file(uuid)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FileListCreateView(APIView):
+    authentication_classes = (BasicAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        files = models.File.objects.filter(owner=request.user)
+        for file in files:
+            file.relative_key = file.relative_key.split('/')[-1]
+        serializer = serializers.NewFileListCreateSerializer(files, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = serializers.NewFileListCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        folder = serializer.validated_data.get('folder')
+        if folder is not None:
+            if not self.request.user.folders.filter(pk=folder.pk):
+                raise PermissionDenied(detail='You do not have permission to perform this action.')
+
+        rk = create_file_relative_key(self.request.user.pk)
+        extension = os.path.splitext(serializer.validated_data.get('title'))[1]
+        size = serializer.validated_data.get('size')
+
+        serializer.save(owner=self.request.user,
+                        relative_key=rk,
+                        extension=extension,
+                        size=size)
+
+        return Response(data=serializer.data, status=HTTP_201_CREATED)

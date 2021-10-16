@@ -26,10 +26,9 @@ def show_page(request):
     """Render page for display assets."""
     folder_id = request.GET.get('folder')
 
-    validate_id_status = validators.validate_folder_id(folder_id)
     validate_params_status = validators.validate_get_params(dict(request.GET))
 
-    if not validate_id_status or not validate_params_status:
+    if not validate_params_status:
         return http.HttpResponseBadRequest(
             content=render(
                 request=request,
@@ -37,11 +36,16 @@ def show_page(request):
             ))
 
     folder_obj = get_object_or_404(models.Folder,
-                                   pk=folder_id) if folder_id else None
+                                   uuid=folder_id) if folder_id else None
+
+    queries.delete_expired_shares()
 
     rows = queries.get_assets_list(folder_id, request.user.pk)
     shared_rows = models.SharedTable.objects.filter(user=request.user,
                                                     created_at__lt=F('expired'))
+    for row in shared_rows:
+        row.file.relative_key = row.file.relative_key.split('/')[-1]
+
     context = {'rows': rows, 'folder_obj': folder_obj, 'shared_rows': shared_rows}
     return render(request, 'assets/root_page.html', context)
 
@@ -71,28 +75,20 @@ def user_upload_file(request):
 
             file_name = uploaded_file.name
 
-            id_status = validators.validate_id_for_folder(parent_folder)
-
-            if not id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
+            parent_folder_instance = models.Folder.objects.filter(uuid=parent_folder).first()
             file_exist = validators.validate_exist_file_in_folder(
                 file_name,
                 user=request.user,
-                folder=parent_folder)
+                folder=parent_folder_instance)
 
             if file_exist:
                 return http.HttpResponse('File already exist in folder.')
 
             folder_exists = models.Folder.objects.filter(
-                pk=parent_folder).exists()
+                uuid=parent_folder).exists()
 
             if folder_exists:
-                parent_folder = models.Folder.objects.get(pk=parent_folder)
+                parent_folder = models.Folder.objects.get(uuid=parent_folder)
             else:
                 parent_folder = None
 
@@ -111,7 +107,7 @@ def user_upload_file(request):
                 messages.success(request, 'The file was uploaded.')
 
                 if parent_folder is not None:
-                    return redirect(f'/?folder={parent_folder.pk}')
+                    return redirect(f'/?folder={parent_folder.uuid}')
                 else:
                     return redirect('root_page')
             else:
@@ -140,10 +136,10 @@ def user_upload_file(request):
 def create_folder(request):
     """View for create new folder."""
     if request.method == 'POST':
-        form = forms.CreateFolderForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
-            new_folder_title = request.POST.get('title', None)
+            new_folder_title = form.cleaned_data.get('title', None)
 
             if new_folder_title is None:
                 return http.HttpResponseBadRequest(
@@ -157,20 +153,8 @@ def create_folder(request):
             if parent_folder == '':
                 parent_folder = None
 
-            id_status = validators.validate_id_for_folder(
-                parent_folder)
-
-            if not id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
             params_status = validators.validate_get_params(
                 dict(request.GET))
-            name_status = validators.validate_new_name(
-                new_folder_title)
             folder_exist_status = validators.validate_parent_folder(
                 parent_folder)
             parent_folder_exist_status = validators.validate_exist_current_folder(parent_folder)
@@ -186,18 +170,18 @@ def create_folder(request):
 
             if (not parent_folder_exist_status or
                     not params_status or
-                    not name_status or
                     not folder_exist_status):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
                         template_name='assets/errors/400_error_page.html'
                     ))
+            parent_folder_instance = models.Folder.objects.filter(uuid=parent_folder).first()
 
-            queries.create_folder(request.user, new_folder_title, parent_folder)
+            queries.create_folder(request.user, new_folder_title, parent_folder_instance)
             messages.success(request, 'The folder was created.')
-            if parent_folder is not None:
-                return redirect(f'/?folder={parent_folder}')
+            if parent_folder_instance is not None:
+                return redirect(f'/?folder={parent_folder_instance.uuid}')
             else:
                 return redirect('root_page')
         else:
@@ -207,7 +191,7 @@ def create_folder(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
     elif request.method == 'GET':
-        form = forms.CreateFolderForm()
+        form = forms.InputNameForm()
         parent_folder = request.GET.get('folder')
         context = {'form': form,
                    'parent_folder': parent_folder}
@@ -222,24 +206,16 @@ def create_folder(request):
 def download_file(request):
     """View for download file."""
     if request.method == 'GET':
-        file_id = request.GET.get('file')
-
-        validate_id_status = validators.validate_file_id(file_id)
-        if not validate_id_status:
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+        file_uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id
+            file_uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            file_id
+            file_uuid
         )
 
         if not validate_permission_status:
@@ -263,7 +239,7 @@ def download_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        download_url = s3.get_url(file_id)
+        download_url = s3.get_url(file_uuid)
 
         return redirect(download_url)
     else:
@@ -274,24 +250,16 @@ def download_file(request):
 def delete_file(request):
     """View for delete file."""
     if request.method == 'GET':
-        file_id = request.GET.get('file')
-
-        validate_id_status = validators.validate_file_id(file_id)
-        if not validate_id_status:
-            return http.HttpResponseBadRequest(
-                content=render(
-                    request=request,
-                    template_name='assets/errors/400_error_page.html'
-                ))
+        file_uuid = request.GET.get('file')
 
         validate_file_exist_status = validators.validate_exist_file(
             request.user,
-            file_id
+            file_uuid
         )
         validate_params_status = validators.validate_get_params(dict(request.GET))
         validate_permission_status = validators.validate_file_permission(
             request.user,
-            file_id
+            file_uuid
         )
 
         if not validate_permission_status:
@@ -315,15 +283,15 @@ def delete_file(request):
                     template_name='assets/errors/400_error_page.html'
                 ))
 
-        file_obj = models.File.objects.get(pk=file_id)
+        file_obj = models.File.objects.filter(relative_key__contains=file_uuid).first()
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
-        if s3.delete_key(file_id):
-            queries.delete_shared_table(file_id)
-            queries.delete_file(file_id)
+        if s3.delete_key(file_uuid):
+            queries.delete_shared_table(file_uuid)
+            queries.delete_file(file_uuid)
             messages.success(request, 'The file was successfully deleted. ')
             if folder_id is not None:
-                return redirect(f'/?folder={folder_id}')
+                return redirect(f'/?folder={folder_id.uuid}')
             else:
                 return redirect('root_page')
         else:
@@ -338,21 +306,14 @@ def delete_file(request):
 def delete_folder(request):
     """Delete folder with all files inside."""
     if request.method == 'GET':
-        folder_id = request.GET.get('folder')
-        id_status = validators.validate_id_for_folder(folder_id)
-        if not id_status:
-            return http.HttpResponseBadRequest(content=render(
-                request=request,
-                template_name='assets/errors/400_error_page.html'
-            ))
+        folder_uuid = request.GET.get('folder')
 
         params_status = validators.validate_get_params(
             dict(request.GET))
-        folder_id_status = validators.validate_folder_id(folder_id)
-        folder_exist_status = validators.validate_parent_folder(folder_id)
+        folder_exist_status = validators.validate_parent_folder(folder_uuid)
         folder_permission_status = validators.validate_folder_permission(
             request.user,
-            folder_id
+            folder_uuid
         )
 
         if not folder_permission_status:
@@ -364,20 +325,19 @@ def delete_folder(request):
 
         if (not params_status or
                 not folder_exist_status or
-                not params_status or
-                not folder_id_status):
+                not params_status):
             return http.HttpResponseBadRequest(content=render(
                 request=request,
                 template_name='assets/errors/400_error_page.html'
             ))
 
-        folder_obj = models.Folder.objects.get(pk=folder_id)
+        folder_obj = models.Folder.objects.get(uuid=folder_uuid)
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
-        s3.delete_folders(folder_id)
+        s3.delete_recursive(folder_uuid)
         messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
-            return redirect(f'/?folder={parent_id}')
+            return redirect(f'/?folder={parent_id.uuid}')
         else:
             return redirect('root_page')
 
@@ -392,11 +352,11 @@ def move_file(request):
     if request.method == 'POST':
         form = forms.MoveFileForm(request.POST, user=request.user)
         if form.is_valid():
-            new_folder = request.POST.get('new_folder', None)
-            file_id = request.GET.get('file', None)
+            new_folder = form.cleaned_data.get('new_folder', None)
+            file_uuid = request.GET.get('file', None)
 
             if (new_folder is None or
-                    file_id is None):
+                    file_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -405,28 +365,19 @@ def move_file(request):
 
             if new_folder == 'None':
                 new_folder = None
-            file_id_status = validators.validate_file_id(file_id)
 
-            if not file_id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
-            file_status = validators.validate_file_id(file_id)
             folder_exist_status = validators.validate_parent_folder(new_folder)
             file_permission_status = validators.validate_file_permission(
                 request.user,
-                file_id
+                file_uuid
             )
-            file_exist_status = validators.validate_exist_file(request.user, file_id)
+            file_exist_status = validators.validate_exist_file(request.user, file_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
 
             if file_exist_status and folder_exist_status:
-                file = models.File.objects.get(pk=file_id)
+                file = models.File.objects.filter(relative_key__contains=file_uuid).first()
                 if new_folder is not None:
-                    new_folder = models.Folder.objects.get(pk=new_folder)
+                    new_folder = models.Folder.objects.filter(uuid=new_folder).first()
                 file_name = file.title
                 file_exist_in_folder = validators.validate_exist_file_in_folder(
                     file_name=file_name,
@@ -438,7 +389,7 @@ def move_file(request):
             if new_folder is not None:
                 folder_permission_status = validators.validate_folder_permission(
                     request.user,
-                    new_folder.pk
+                    new_folder.uuid
                 )
             else:
                 folder_permission_status = True
@@ -450,8 +401,7 @@ def move_file(request):
                         template_name='assets/errors/403_error_page.html'
                     ))
 
-            if (not file_status or
-                    not folder_exist_status or
+            if (not folder_exist_status or
                     not file_exist_status or
                     not params_status):
                 return http.HttpResponseBadRequest(
@@ -460,10 +410,10 @@ def move_file(request):
                         template_name='assets/errors/400_error_page.html'
                     ))
             old_folder = file.folder
-            queries.move_file(new_folder, file_id)
+            queries.move_file(new_folder, file_uuid)
             messages.success(request, 'The file was successfully moved. ')
             if old_folder is not None:
-                return redirect(f'/?folder={old_folder.pk}')
+                return redirect(f'/?folder={old_folder.uuid}')
             else:
                 return redirect('root_page')
 
@@ -481,21 +431,13 @@ def move_file(request):
 def rename_file(request):
     """View for rename file."""
     if request.method == 'POST':
-        form = forms.RenameFileForm(request.POST)
+        form = forms.InputNameForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('new_title', None)
-            file_id = request.GET.get('file', None)
+            new_title = form.cleaned_data.get('title', None)
+            file_uuid = request.GET.get('file', None)
 
             if (new_title is None or
-                    file_id is None):
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
-            file_id_status = validators.validate_file_id(file_id)
-            if not file_id_status:
+                    file_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -503,16 +445,14 @@ def rename_file(request):
                     ))
 
             new_title = new_title.strip()
-            file_status = validators.validate_file_id(file_id)
             file_permission_status = validators.validate_file_permission(
                 request.user,
-                file_id
+                file_uuid
             )
-            file_exist_status = validators.validate_exist_file(request.user, file_id)
+            file_exist_status = validators.validate_exist_file(request.user, file_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
 
             if (not file_exist_status or
-                    not file_status or
                     not params_status):
                 return http.HttpResponseBadRequest(
                     content=render(
@@ -528,7 +468,7 @@ def rename_file(request):
                     ))
 
             if file_exist_status:
-                file = models.File.objects.get(pk=file_id)
+                file = models.File.objects.filter(relative_key__contains=file_uuid).first()
                 folder = file.folder
                 file_exist_in_folder = validators.validate_exist_file_in_folder(new_title,
                                                                                 request.user,
@@ -536,10 +476,10 @@ def rename_file(request):
                 if file_exist_in_folder:
                     return http.HttpResponse('File already exists in folder. Change name.')
 
-            queries.rename_file(file_id, new_title)
+            queries.rename_file(file_uuid, new_title)
             messages.success(request, 'The file was successfully renamed. ')
             if folder is not None:
-                return redirect(f'/?folder={folder.pk}')
+                return redirect(f'/?folder={folder.uuid}')
             else:
                 return redirect('root_page')
 
@@ -551,7 +491,7 @@ def rename_file(request):
                 ))
 
     elif request.method == 'GET':
-        form = forms.RenameFileForm()
+        form = forms.InputNameForm()
         context = {'form': form}
         return render(request,
                       'assets/rename_file.html',
@@ -566,11 +506,11 @@ def rename_folder(request):
     if request.method == 'POST':
         form = forms.RenameFolderForm(request.POST)
         if form.is_valid():
-            new_title = request.POST.get('new_title', None)
-            folder_id = request.GET.get('folder', None)
+            new_title = form.cleaned_data.get('new_title', None)
+            folder_uuid = request.GET.get('folder', None)
 
             if (new_title is None or
-                    folder_id is None):
+                    folder_uuid is None):
                 return http.HttpResponseBadRequest(
                     content=render(
                         request=request,
@@ -579,23 +519,15 @@ def rename_folder(request):
 
             new_title = new_title.strip()
 
-            folder_id_status = validators.validate_folder_id(folder_id)
-            if not folder_id_status:
-                return http.HttpResponseBadRequest(
-                    content=render(
-                        request=request,
-                        template_name='assets/errors/400_error_page.html'
-                    ))
-
             folder_permission_status = validators.validate_folder_permission(
                 request.user,
-                folder_id
+                folder_uuid
             )
             folder_exist_status = validators.validate_exist_current_folder(
-                folder_id)
+                folder_uuid)
             params_status = validators.validate_get_params(dict(request.GET))
             new_folder_exist = validators.validate_exist_folder_new_title(
-                folder_id,
+                folder_uuid,
                 new_title,
                 request.user
             )
@@ -618,8 +550,8 @@ def rename_folder(request):
                         request=request,
                         template_name='assets/errors/403_error_page.html'
                     ))
-            current_folder = models.Folder.objects.get(pk=folder_id)
-            queries.rename_folder(folder_id, new_title)
+            current_folder = models.Folder.objects.get(pk=folder_uuid)
+            queries.rename_folder(folder_uuid, new_title)
             messages.success(request, 'The folder was successfully renamed. ')
             if current_folder.parent is not None:
                 return redirect(f'/?folder={current_folder.parent.pk}')
