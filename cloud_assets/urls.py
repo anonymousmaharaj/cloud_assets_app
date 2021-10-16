@@ -1,9 +1,9 @@
 """cloud_assets URL Configuration."""
 
-from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-from django.conf.urls.static import static
+from cloud_assets import settings
+from cloud_assets.yasg import urlpatterns as swagger_urlpatterns
 
 from assets import urls
 
@@ -12,4 +12,6 @@ urlpatterns = [
     path('', include('assets.urls')),
     path('', include('authentication.urls')),
     path('api/', include(urls.api_urlpatterns))
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+if settings.DEBUG:
+    urlpatterns += swagger_urlpatterns
