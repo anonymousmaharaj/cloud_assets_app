@@ -1,10 +1,10 @@
+from distutils.util import strtobool
 import logging
 import os
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -17,7 +17,7 @@ AWS_SIGNATURE_VERSION = os.getenv('AWS_SIGNATURE_VERSION')
 
 S3_BUCKET = os.getenv('S3_BUCKET')
 
-DEBUG = os.getenv('DEBUG')
+DEBUG = strtobool(os.getenv('DEBUG'))
 
 ALLOWED_HOSTS = ['*']
 

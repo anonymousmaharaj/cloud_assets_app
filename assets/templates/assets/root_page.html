@@ -38,8 +38,8 @@
 
 
                         {% else %}
-                            <li class="list-group-item p-2">
-                                <span class="material-icons">description</span>{{ row.title }}
+                            <li class="list-group-item">
+                                <span class="material-icons">description</span><img src="{{ row.thumbnail }}" alt=""> {{ row.title }}
                                 <a href="download/?file={{ row.uuid }}"
                                    class="btn btn-outline-primary btn-sm">Download</a>
                                 <a href="delete/?file={{ row.uuid }}" onclick='return confirm("Are you sure?")'
