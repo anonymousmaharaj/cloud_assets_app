@@ -100,11 +100,10 @@ def delete_recursive(folder_id):
 def check_exists(key):
     """Check thumbnails exist."""
     bucket = create_bucket()
-    s3 = boto3.client('s3')
     try:
-        s3.head_object(Bucket=bucket.name, Key=key)
+        bucket.meta.client.head_object(Bucket=bucket.name, Key=key)
     except ClientError:
-        message = f'Thumbnail does not exist. key = {key}'
+        message = f'Thumbnail does not exist. key = {key}.'
         logger.critical(message)
         raise ParseError(message)
 
@@ -113,10 +112,10 @@ def get_thumbnails(files, user):
     bucket = create_bucket()
 
     for file in files:
-        if not file['is_folder']:
+        if not file['is_folder'] and file['thumbnail_key'] is not None:
             params = {
                 'Bucket': bucket.name,
-                'Key': f'thumbnails/users/{user.pk}/assets/{file.get("uuid")}'
+                'Key': file['thumbnail_key']
             }
             response = bucket.meta.client.generate_presigned_url('get_object',
                                                                  Params=params,
