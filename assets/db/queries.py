@@ -9,7 +9,7 @@ from assets import models
 def get_assets_list(folder_id, user_pk):
     """Raw SQL query for receiving assets of folder or a root page."""
     query = """
-        SELECT id, title, folder_id AS parent_id, False AS is_folder, SPLIT_PART(relative_key, '/', 4) as uuid
+        SELECT id, title, folder_id AS parent_id, False AS is_folder, SPLIT_PART(relative_key, '/', 4) as uuid, thumbnail_key as thumbnail_key
           FROM assets_file
          WHERE (folder_id = (select id
                    from assets_folder
@@ -17,7 +17,7 @@ def get_assets_list(folder_id, user_pk):
             OR (%(folder_id)s IS NULL and folder_id IS NULL))
            AND owner_id = %(owner)s
          UNION
-        SELECT id, title, parent_id AS parent_id, True AS is_folder, uuid::text as uuid
+        SELECT id, title, parent_id AS parent_id, True AS is_folder, uuid::text as uuid, Null as thumbnail_key
           FROM assets_folder
          WHERE (parent_id = (select id
                    from assets_folder

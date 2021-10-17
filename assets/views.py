@@ -85,7 +85,8 @@ def user_upload_file(request):
                 folder=parent_folder_instance)
 
             if file_exist:
-                return http.HttpResponse('File already exist in folder.')
+                messages.error(request, 'The file already exists.')
+                return redirect('root_page')
 
             folder_exists = models.Folder.objects.filter(
                 uuid=parent_folder).exists()
@@ -287,14 +288,14 @@ def delete_file(request):
                 ))
 
         file_obj = models.File.objects.filter(relative_key__contains=file_uuid).first()
-        folder_id = file_obj.folder_id if file_obj.folder_id else None
+        folder_uuid = file_obj.folder.uuid if file_obj.folder else None
 
         if s3.delete_key(file_uuid):
             queries.delete_shared_table(file_uuid)
             queries.delete_file(file_uuid)
             messages.success(request, 'The file was successfully deleted. ')
-            if folder_id is not None:
-                return redirect(f'/?folder={folder_id.uuid}')
+            if folder_uuid is not None:
+                return redirect(f'/?folder={folder_uuid}')
             else:
                 return redirect('root_page')
         else:
@@ -335,12 +336,12 @@ def delete_folder(request):
             ))
 
         folder_obj = models.Folder.objects.get(uuid=folder_uuid)
-        parent_id = folder_obj.parent_id if folder_obj.parent_id else None
+        parent_uuid = folder_obj.parent.uuid if folder_obj.parent else None
 
         s3.delete_recursive(folder_uuid)
         messages.success(request, 'The folder was successfully deleted. ')
-        if parent_id is not None:
-            return redirect(f'/?folder={parent_id.uuid}')
+        if parent_uuid is not None:
+            return redirect(f'/?folder={parent_uuid}')
         else:
             return redirect('root_page')
 
@@ -557,7 +558,7 @@ def rename_folder(request):
             queries.rename_folder(folder_uuid, new_title)
             messages.success(request, 'The folder was successfully renamed. ')
             if current_folder.parent is not None:
-                return redirect(f'/?folder={current_folder.parent.pk}')
+                return redirect(f'/?folder={current_folder.parent.uuid}')
             else:
                 return redirect('root_page')
 
