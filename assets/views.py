@@ -1,19 +1,23 @@
 """Views for Assets application."""
-
+import logging
 import os
 import uuid
 
 from django import http
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.db import IntegrityError
 
 from assets import forms
 from assets import models
 from assets import validators
 from assets.aws import s3
 from assets.db import queries
+
+logger = logging.getLogger(__name__)
 
 
 def health_check(request):
@@ -289,17 +293,22 @@ def delete_file(request):
         file_obj = models.File.objects.filter(relative_key__contains=file_uuid).first()
         folder_id = file_obj.folder_id if file_obj.folder_id else None
 
-        if s3.delete_key(file_uuid):
-            queries.delete_shared_table(file_uuid)
-            queries.delete_file(file_uuid)
-            messages.success(request, 'The file was successfully deleted. ')
-            if folder_id is not None:
-                return redirect(f'/?folder={folder_id.uuid}')
-            else:
-                return redirect('root_page')
+        try:
+            with transaction.atomic():
+                queries.delete_shared_table(file_uuid)
+                queries.delete_file(file_uuid)
+        except IntegrityError as e:
+            logger.exception(f'Exception while deleting file {file_uuid}. {str(e)}')
+            messages.error(request, 'Cannot delete file. Try again. ')
+            return redirect('root_page')
         else:
-            return http.HttpResponse('Cannot delete this file or this file'
-                                     'doesn`t exist')
+            s3.delete_key(file_uuid)
+
+        messages.success(request, 'The file was successfully deleted. ')
+        if folder_id is not None:
+            return redirect(f'/?folder={folder_id.uuid}')
+        else:
+            return redirect('root_page')
 
     else:
         return http.HttpResponseNotAllowed(['GET'])
@@ -337,7 +346,14 @@ def delete_folder(request):
         folder_obj = models.Folder.objects.get(uuid=folder_uuid)
         parent_id = folder_obj.parent_id if folder_obj.parent_id else None
 
-        s3.delete_recursive(folder_uuid)
+        try:
+            with transaction.atomic():
+                s3.delete_recursive(folder_uuid)
+        except IntegrityError as e:
+            logger.exception(f'Exception while deleting folder {folder_uuid}. {str(e)}')
+            messages.error(request, 'Cannot delete file. Try again. ')
+            return redirect('root_page')
+
         messages.success(request, 'The folder was successfully deleted. ')
         if parent_id is not None:
             return redirect(f'/?folder={parent_id.uuid}')
