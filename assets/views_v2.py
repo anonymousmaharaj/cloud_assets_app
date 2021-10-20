@@ -6,7 +6,7 @@ from django import http, views
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -260,8 +260,13 @@ class DeleteShareFileView(LoginRequiredMixin, views.View):
         file = models.File.objects.filter(relative_key__contains=uuid).first()
         share = models.SharedTable.objects.filter(file__relative_key__contains=uuid, user=request.user.pk).first()
 
-        share.delete()
-        file.delete()
+        try:
+            with transaction.atomic():
+                share.delete()
+                file.delete()
+        except IntegrityError as e:
+            logger.exception(f'Exception while deleting shared file obj: {file.relative_key.split("/")[-1]}. {str(e)}')
+
         return redirect('root_page')
 
 
@@ -450,8 +455,12 @@ class SharedFileRetrieveUpdateDestroyView(APIView):
                 permissions__name=models.Permissions.DELETE_ONLY).exists():
             raise PermissionDenied(detail='You do not have permission to perform this action.')
 
-        queries.delete_shared_table(uuid)
-        queries.delete_file(uuid)
+        try:
+            with transaction.atomic():
+                queries.delete_shared_table(uuid)
+                queries.delete_file(uuid)
+        except IntegrityError as e:
+            logger.exception(f'Exception while deleting shared file obj: {uuid}. {str(e)}')
 
         return Response({'detail': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -525,9 +534,14 @@ class FileRetrieveUpdateDestroyView(APIView):
                 owner=request.user.pk).exists():
             raise PermissionDenied(detail='forbidden')
 
-        s3.delete_key(uuid)
-        queries.delete_shared_table(uuid)
-        queries.delete_file(uuid)
+        try:
+            with transaction.atomic():
+                queries.delete_shared_table(uuid)
+                queries.delete_file(uuid)
+        except IntegrityError as e:
+            logger.exception(f'Exception while deleting file {uuid}. {str(e)}')
+        else:
+            s3.delete_key(uuid)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
