@@ -6,7 +6,8 @@ __pycache__/
 # Custom
 .idea/
 static/
-.python-version
+.python-version\
+profilers/
 
 # C extensions
 *.so

@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   web:
+    platform: linux/arm64
     build:
       context: ./
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
     env_file:
       - ./cloud_assets/.env
   nginx:
+    platform: linux/arm64
     build:
       context: ./docker/nginx
       dockerfile: Dockerfile

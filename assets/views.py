@@ -42,7 +42,7 @@ def show_page(request):
 
     rows = queries.get_assets_list(folder_id, request.user.pk)
 
-    rows = s3.get_thumbnails(rows, request.user)
+    rows = s3.get_thumbnails(rows)
 
     shared_rows = models.SharedTable.objects.filter(user=request.user,
                                                     created_at__lt=F('expired'))

@@ -108,7 +108,7 @@ def check_exists(key):
         raise ParseError(message)
 
 
-def get_thumbnails(files, user):
+def get_thumbnails(files) -> list:
     bucket = create_bucket()
 
     for file in files:
@@ -123,5 +123,3 @@ def get_thumbnails(files, user):
             file['thumbnail'] = response
 
     return files
-
-
