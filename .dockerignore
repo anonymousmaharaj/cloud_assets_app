@@ -2,3 +2,5 @@ static
 venv
 logs
 cloud_assets/.env
+__pycache__
+.git
