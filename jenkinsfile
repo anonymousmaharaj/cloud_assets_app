@@ -1,0 +1,128 @@
+pipeline {
+
+  agent any
+
+  stages {
+
+        stage('Linter') {
+            agent { docker { image 'python:3.8.10'
+                     args '''
+                     --user 0:0
+                     -v /home/ubuntu/af-internship:/root/af-internship
+                     '''
+                }}
+
+            steps{
+                sh '''
+                cd /root/af-internship/
+                make lint
+                '''
+            }
+            post {
+                cleanup {
+                cleanWs()
+                }
+            }
+
+        }
+
+        stage('Test') {
+            agent { docker { image 'python:3.8.10'
+                     args '''
+                     --user 0:0
+                     -v /home/ubuntu/af-internship:/root/af-internship
+                     -v /var/run/docker.sock:/var/run/docker.sock
+                     -v /usr/bin/docker:/usr/bin/docker
+
+                     --name="test"
+                     --network="bridge"
+
+                     -e AWS_KEY=$AWS_KEY
+                     -e AWS_REGION=$AWS_REGION
+                     -e AWS_SECRET_KEY=$AWS_SECRET_KEY
+                     -e AWS_SIGNATURE_VERSION=$AWS_SIGNATURE_VERSION
+                     -e DB_HOST=$DB_HOST
+                     -e DB_NAME=$DB_NAME
+                     -e DB_PASSWORD=$DB_PASSWORD
+                     -e DB_PORT=$DB_PORT
+                     -e DB_USER=$DB_USER
+                     -e DEBUG=$DEBUG
+                     -e INVITE_CODE=$INVITE_CODE
+                     -e S3_BUCKET=$S3_BUCKET
+                     -e SECRET_KEY=$SECRET_KEY
+                     -e SENTRY_DSN=$SENTRY_DSN
+                     '''
+                    }
+            }
+
+            steps {
+                sh '''
+                cd /root/af-internship/
+                make postgres
+                make dockerconnect
+                make test
+                '''
+            }
+            post {
+                always {
+                    sh '''
+                    cd /root/af-internship/
+                    make dockerkill
+                    '''
+                }
+                cleanup {
+                cleanWs()
+                }
+            }
+
+        }
+
+        stage('Build') {
+
+            agent any
+
+            steps {
+                sh '''
+                cd /home/ubuntu/af-internship
+                make dockercomposebuild
+                make dockertag
+                '''
+
+            }
+
+            post {
+                cleanup {
+                cleanWs()
+                }
+            }
+
+        }
+        stage('Push'){
+            steps{
+                withDockerRegistry(credentialsId: 'ecr:us-east-2:cleanmaharaj_root', url: 'https://$ECR_WEB') {
+                    sh 'docker push $ECR_WEB'
+                }
+                withDockerRegistry(credentialsId: 'ecr:us-east-2:cleanmaharaj_root', url: 'https://$ECR_NGINX') {
+                    sh 'docker push $ECR_NGINX'
+                }
+            }
+
+            post {
+                cleanup {
+                cleanWs()
+                }
+            }
+
+        }
+
+        stage('Deploy'){
+            steps{
+                sh '''
+                  cd /home/ubuntu/deploy
+                  eb deploy
+                '''
+            }
+      }
+
+  }
+}
