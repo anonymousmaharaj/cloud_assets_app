@@ -30,5 +30,6 @@ class UserRegisterForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
 
     def clean_invite_code(self):
+        """Check Invite Code."""
         if self.cleaned_data['invite_code'] != os.getenv('INVITE_CODE'):
             raise forms.ValidationError('Enter a valid invite code')

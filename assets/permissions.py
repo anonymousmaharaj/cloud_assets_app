@@ -1,8 +1,6 @@
 """All custom permissions."""
 from rest_framework import permissions
 
-from assets import models
-
 
 class IsObjectOwner(permissions.BasePermission):
     """Permission to check if a folder is owned by a user."""

@@ -93,4 +93,4 @@ def validate_uuid(value):
     try:
         uuid.UUID(value, version=4)
     except ValueError:
-        raise ParseError(detail="Invalid UUID")
+        raise ParseError(detail='Invalid UUID')

@@ -1,9 +1,10 @@
+import io
 import os
+import requests
 import urllib.parse
+
 import boto3
 from PIL import Image
-import io
-import requests
 
 print('Loading function')
 
