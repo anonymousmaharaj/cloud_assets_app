@@ -2,7 +2,7 @@ server {
     server_name clouds.alesha.pro 18.220.180.144;
 
     location /static/ {
-        root /home/ubuntu/af-internship;
+        root /home/ubuntu/cloud_assets;
     }
 
     location / {

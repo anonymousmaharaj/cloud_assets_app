@@ -30,8 +30,8 @@ dockerkill:
 	docker rm postgres
 
 dockertag:
-	docker tag af-internship_web ${ECR_WEB}
-	docker tag af-internship_nginx ${ECR_NGINX}
+	docker tag cloud_assets_web ${ECR_WEB}
+	docker tag cloud_assets_nginx ${ECR_NGINX}
 
 dockercomposebuild:
 	docker-compose build
