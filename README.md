@@ -2,7 +2,7 @@
 A cloud-based application for managing your Assets
 
 
-##Tech
+## Tech
 - Python 3.8.11
 - PostgreSQL 12.8
 - Django 3.0.14
