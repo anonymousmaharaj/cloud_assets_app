@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 echo assets_view_logs > assets_views.log
 echo requests_logs > requests.log

@@ -1,0 +1,9 @@
+-r base.txt
+
+flake8==3.9.2
+flake8-bandit==2.1.2
+flake8-bugbear==21.4.3
+flake8-docstrings==1.6.0
+flake8-import-order==0.18.1
+flake8-polyfill==1.0.2
+flake8-quotes==3.2.0

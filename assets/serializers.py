@@ -34,6 +34,7 @@ class FolderRetrieveUpdateSerializer(serializers.ModelSerializer):
 
 class FileRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
     """Serializer for Get, Update and Delete methods."""
+
     folder_uuid = serializers.CharField(max_length=255, required=False, allow_null=True)
 
     class Meta:

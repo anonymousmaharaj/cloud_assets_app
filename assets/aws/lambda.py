@@ -1,9 +1,10 @@
+import io
 import os
+import requests
 import urllib.parse
+
 import boto3
 from PIL import Image
-import io
-import requests
 
 print('Loading function')
 
@@ -21,7 +22,7 @@ def lambda_handler(event, context):
     try:
         tags = s3.get_object_tagging(Bucket=bucket, Key=key)
         if tags['TagSet'][0]['Value'] not in img_extensions:
-            print("Is not image")
+            print('Is not image')
             return response['ContentType']    # noqa
 
         file = s3.get_object(Bucket=bucket, Key=key)
@@ -39,7 +40,7 @@ def lambda_handler(event, context):
             f'{host}/api/assets/files/thumbnail/{key.split("/")[-1]}/',
             data={'thumbnail_key': thumbnail_key})
 
-        print("CONTENT TYPE: " + response['ContentType'])
+        print('CONTENT TYPE: ' + response['ContentType'])
         return response['ContentType']    # noqa
     except Exception as e:
         print(e)
