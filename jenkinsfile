@@ -8,13 +8,13 @@ pipeline {
             agent { docker { image 'python:3.8.10'
                      args '''
                      --user 0:0
-                     -v /home/ubuntu/af-internship:/root/af-internship
+                     -v /home/ubuntu/cloud_assets:/root/cloud_assets
                      '''
                 }}
 
             steps{
                 sh '''
-                cd /root/af-internship/
+                cd /root/cloud_assets/
                 make lint
                 '''
             }
@@ -30,7 +30,7 @@ pipeline {
             agent { docker { image 'python:3.8.10'
                      args '''
                      --user 0:0
-                     -v /home/ubuntu/af-internship:/root/af-internship
+                     -v /home/ubuntu/cloud_assets:/root/cloud_assets
                      -v /var/run/docker.sock:/var/run/docker.sock
                      -v /usr/bin/docker:/usr/bin/docker
 
@@ -57,7 +57,7 @@ pipeline {
 
             steps {
                 sh '''
-                cd /root/af-internship/
+                cd /root/cloud_assets/
                 make postgres
                 make dockerconnect
                 make test
@@ -66,7 +66,7 @@ pipeline {
             post {
                 always {
                     sh '''
-                    cd /root/af-internship/
+                    cd /root/cloud_assets/
                     make dockerkill
                     '''
                 }
@@ -83,7 +83,7 @@ pipeline {
 
             steps {
                 sh '''
-                cd /home/ubuntu/af-internship
+                cd /home/ubuntu/cloud_assets
                 make dockercomposebuild
                 make dockertag
                 '''
@@ -99,10 +99,10 @@ pipeline {
         }
         stage('Push'){
             steps{
-                withDockerRegistry(credentialsId: 'ecr:us-east-2:cleanmaharaj_root', url: 'https://$ECR_WEB') {
+                withDockerRegistry(credentialsId: 'ecr:us-east-2:$USER', url: 'https://$ECR_WEB') {
                     sh 'docker push $ECR_WEB'
                 }
-                withDockerRegistry(credentialsId: 'ecr:us-east-2:cleanmaharaj_root', url: 'https://$ECR_NGINX') {
+                withDockerRegistry(credentialsId: 'ecr:us-east-2:$USER', url: 'https://$ECR_NGINX') {
                     sh 'docker push $ECR_NGINX'
                 }
             }
