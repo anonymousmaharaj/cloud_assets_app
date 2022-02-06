@@ -1,5 +1,7 @@
 """Views for Assets application."""
 
+import cProfile
+from datetime import datetime
 import os
 import uuid
 
@@ -15,6 +17,8 @@ from assets import validators
 from assets.aws import s3
 from assets.db import queries
 
+profile = cProfile.Profile()
+
 
 def health_check(request):
     """Response 200 status code."""
@@ -24,6 +28,9 @@ def health_check(request):
 @login_required(login_url='/login/')
 def show_page(request):
     """Render page for display assets."""
+    profile.enable()
+    now = datetime.now()
+
     folder_id = request.GET.get('folder')
 
     validate_params_status = validators.validate_get_params(dict(request.GET))
@@ -50,6 +57,9 @@ def show_page(request):
         row.file.relative_key = row.file.relative_key.split('/')[-1]
 
     context = {'rows': rows, 'folder_obj': folder_obj, 'shared_rows': shared_rows}
+
+    profile.disable()
+    profile.dump_stats(f'profilers/{__name__}_show_page_{now}.prof')
     return render(request, 'assets/root_page.html', context)
 
 
@@ -60,7 +70,12 @@ def user_upload_file(request):
     Render form. Get file's path and upload it on S3.
     Create new object in File table.
     """
+
     if request.method == 'POST':
+
+        profile.enable()
+        now = datetime.now()
+
         form = forms.UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             parent_folder = request.GET.get('folder')
@@ -109,6 +124,9 @@ def user_upload_file(request):
                                     uploaded_file.size,
                                     os.path.splitext(uploaded_file.name)[1])
                 messages.success(request, 'The file was uploaded.')
+
+                profile.disable()
+                profile.dump_stats(f'profilers/{__name__}_upload_file_{now}.prof')
 
                 if parent_folder is not None:
                     return redirect(f'/?folder={parent_folder.uuid}')
